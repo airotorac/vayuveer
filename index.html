@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- ARTIFACT:BEGIN -->
+<title>Vayuveer</title>
+<meta name="description" content="Vayuveer designs and builds unmanned aircraft in India: surveillance, inspection, logistics, fire safety, rescue, facade cleaning and passenger drones.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Manrope:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+  :root{
+    --bg:#0B0F14;
+    --bg-2:#0F151C;
+    --surface:#131A22;
+    --line:rgba(138,151,166,.18);
+    --line-strong:rgba(138,151,166,.35);
+    --text:#E8EDF2;
+    --muted:#8A97A6;
+    --accent:#F2A33A;
+    --accent-ink:#1A1206;
+    --steel:#6FA8DC;
+    --display:"Rajdhani","Bahnschrift","Arial Narrow",sans-serif;
+    --body:"Manrope","Segoe UI",system-ui,sans-serif;
+    --mono:"JetBrains Mono","SF Mono",Menlo,Consolas,monospace;
+    --gutter:clamp(20px,5vw,72px);
+    --maxw:1240px;
+    color-scheme:dark;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;background:var(--bg);color:var(--text);
+    font-family:var(--body);font-size:16px;line-height:1.6;
+    -webkit-font-smoothing:antialiased;overflow-x:hidden;
+  }
+  a{color:inherit;text-decoration:none}
+  h1,h2,h3{font-family:var(--display);line-height:1;margin:0;text-wrap:balance;letter-spacing:.01em}
+  p{margin:0}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:2px}
+
+  /* ---------- 3D canvas ---------- */
+  #scene{position:fixed;inset:0;width:100%;height:100%;display:block;z-index:0}
+  .vignette{position:fixed;inset:0;pointer-events:none;z-index:1;
+    background:radial-gradient(120% 90% at 50% 40%, transparent 55%, rgba(11,15,20,.85) 100%)}
+
+  /* ---------- nav ---------- */
+  .nav{position:fixed;top:0;left:0;right:0;z-index:20;display:flex;align-items:center;gap:32px;
+    padding:18px var(--gutter);transition:background .4s,backdrop-filter .4s,border-color .4s;
+    border-bottom:1px solid transparent}
+  .nav.scrolled{background:rgba(11,15,20,.72);backdrop-filter:blur(14px);border-color:var(--line)}
+  .brand{font-family:var(--display);font-weight:700;font-size:26px;letter-spacing:.14em;display:flex;align-items:center;gap:10px}
+  .brand .mark{width:26px;height:26px;display:block}
+  .brand small{font-family:var(--mono);font-size:11px;letter-spacing:.08em;color:var(--muted);font-weight:400;margin-left:2px}
+  .nav ul{list-style:none;margin:0 0 0 auto;padding:0;display:flex;gap:28px;font-size:14px;font-weight:500;color:var(--muted)}
+  .nav ul a:hover{color:var(--text)}
+  .btn{display:inline-flex;align-items:center;gap:10px;font-family:var(--display);font-weight:600;font-size:17px;letter-spacing:.06em;text-transform:uppercase;
+    padding:10px 18px;border:1px solid var(--line-strong);border-radius:3px;transition:all .25s;white-space:nowrap}
+  .btn:hover{border-color:var(--accent);color:var(--accent)}
+  .btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+  .btn.primary:hover{background:#ffb64f;color:var(--accent-ink)}
+  .nav .btn{margin-left:auto}
+  .nav ul + .btn{margin-left:0}
+
+  /* ---------- altimeter rail ---------- */
+  .altimeter{position:fixed;right:clamp(12px,2.4vw,34px);top:50%;transform:translateY(-50%);z-index:15;
+    display:flex;flex-direction:column;gap:14px;opacity:0;transition:opacity .5s;pointer-events:none}
+  .altimeter.show{opacity:1;pointer-events:auto}
+  .altimeter a{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.06em;justify-content:flex-end}
+  .altimeter a span{opacity:0;transform:translateX(6px);transition:all .3s}
+  .altimeter a i{width:18px;height:2px;background:var(--line-strong);display:block;transition:all .3s}
+  .altimeter a:hover span,.altimeter a.active span{opacity:1;transform:none}
+  .altimeter a.active i{width:28px;background:var(--accent)}
+  .altimeter a.active{color:var(--accent)}
+
+  /* ---------- shared ---------- */
+  main{position:relative;z-index:2}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent)}
+  .lede{font-size:clamp(17px,1.6vw,20px);color:var(--muted);max-width:56ch}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 var(--gutter)}
+
+  /* ---------- hero ---------- */
+  .hero{min-height:100svh;display:grid;align-content:center;padding:120px var(--gutter) 80px;position:relative}
+  .hero-inner{max-width:var(--maxw);margin:0 auto;width:100%;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.9fr);gap:40px;align-items:center}
+  .hero h1{font-size:clamp(60px,9.5vw,150px);font-weight:700;line-height:.88;text-transform:uppercase;letter-spacing:-.005em}
+  .hero h1 em{font-style:normal;color:var(--accent)}
+  .hero .eyebrow{margin-bottom:22px}
+  .hero .lede{margin:28px 0 36px}
+  .cta{display:flex;gap:14px;flex-wrap:wrap}
+  .hero-meta{margin-top:56px;display:flex;gap:28px;flex-wrap:wrap;font-family:var(--mono);font-size:12px;color:var(--muted);letter-spacing:.04em}
+  .hero-meta b{color:var(--text);font-weight:500}
+  .scroll-cue{position:absolute;left:var(--gutter);bottom:28px;font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:12px}
+  .scroll-cue i{width:1px;height:40px;background:linear-gradient(var(--accent),transparent);display:block;animation:cue 2s infinite}
+  @keyframes cue{0%{transform:scaleY(0);transform-origin:top}50%{transform:scaleY(1);transform-origin:top}51%{transform-origin:bottom}100%{transform:scaleY(0);transform-origin:bottom}}
+
+  /* ---------- fleet bays ---------- */
+  .fleet-head{padding:0 var(--gutter);position:absolute;left:0;right:0;transform:translateY(-100%);pointer-events:none}
+  .bay{min-height:100vh;display:grid;align-items:center;padding:0 var(--gutter);position:relative}
+  .panel{max-width:520px;padding:32px 0;opacity:.001;transform:translateY(28px);transition:opacity .8s cubic-bezier(.2,.7,.2,1),transform .8s cubic-bezier(.2,.7,.2,1)}
+  .bay.in .panel{opacity:1;transform:none}
+  .bay:nth-child(even) .panel{margin-left:auto}
+  .panel .eyebrow{display:flex;align-items:center;gap:14px;margin-bottom:14px}
+  .panel .eyebrow::before{content:"";width:34px;height:1px;background:var(--accent)}
+  .panel h2{font-size:clamp(56px,7vw,104px);font-weight:700;text-transform:uppercase;line-height:.9}
+  .panel h2 small{display:block;font-size:clamp(18px,1.8vw,24px);font-weight:600;color:var(--muted);letter-spacing:.12em;margin-top:8px}
+  .panel .desc{margin:22px 0 28px;color:#c3ccd6;font-size:16px;max-width:48ch}
+  .specs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0;margin:0;border-top:1px solid var(--line-strong)}
+  .specs div{padding:12px 0;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:2px}
+  .specs div:nth-child(odd){padding-right:18px}
+  .specs div:nth-child(even){padding-left:18px;border-left:1px solid var(--line)}
+  .specs dt{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+  .specs dd{margin:0;font-family:var(--display);font-size:28px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.1}
+  .specs dd small{font-size:14px;color:var(--muted);font-family:var(--mono);margin-left:6px;font-weight:400}
+  .tags{list-style:none;padding:0;margin:20px 0 0;display:flex;flex-wrap:wrap;gap:8px}
+  .tags li{font-family:var(--mono);font-size:11px;letter-spacing:.06em;padding:5px 10px;border:1px solid var(--line-strong);border-radius:2px;color:var(--muted)}
+  .tags li.hot{border-color:rgba(242,163,58,.5);color:var(--accent)}
+
+  /* ---------- solid sections ---------- */
+  .solid{position:relative;background:linear-gradient(rgba(11,15,20,.55),var(--bg) 18%);padding:120px 0}
+  .solid + .solid{background:var(--bg);padding-top:0}
+  .section-head{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:40px;align-items:end;margin-bottom:56px}
+  .section-head h2{font-size:clamp(44px,5.6vw,84px);font-weight:700;text-transform:uppercase;line-height:.92}
+  .section-head .eyebrow{margin-bottom:14px}
+  .grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-top:1px solid var(--line-strong);border-left:1px solid var(--line-strong)}
+  .cell{padding:28px 26px 32px;border-right:1px solid var(--line-strong);border-bottom:1px solid var(--line-strong);display:flex;flex-direction:column;gap:14px;min-height:230px;background:linear-gradient(180deg,rgba(19,26,34,.6),rgba(19,26,34,0))}
+  .cell .k{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--steel)}
+  .cell h3{font-size:26px;font-weight:600;text-transform:uppercase;letter-spacing:.03em}
+  .cell p{color:var(--muted);font-size:15px}
+  .cell svg{width:34px;height:34px;stroke:var(--accent);fill:none;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round}
+
+  /* compliance strip */
+  .strip{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:1px;background:var(--line-strong);border:1px solid var(--line-strong)}
+  .strip div{background:var(--bg-2);padding:24px 22px;display:flex;flex-direction:column;gap:8px}
+  .strip .n{font-family:var(--display);font-size:34px;font-weight:700;color:var(--accent);line-height:1}
+  .strip .n small{font-size:14px;font-family:var(--mono);color:var(--muted);margin-left:4px;font-weight:400}
+  .strip p{font-size:14px;color:var(--muted)}
+  .strip b{color:var(--text);font-weight:600;font-size:15px}
+
+  /* contact */
+  .contact-grid{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:64px;align-items:start}
+  .contact-grid h2{font-size:clamp(52px,7vw,110px);text-transform:uppercase;line-height:.9;font-weight:700}
+  .contact-grid h2 em{font-style:normal;color:var(--accent)}
+  .contact-list{margin:32px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:18px}
+  .contact-list li{display:grid;grid-template-columns:110px 1fr;gap:12px;font-size:15px;border-bottom:1px solid var(--line);padding-bottom:14px}
+  .contact-list .k{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);padding-top:4px}
+  .contact-list a{color:var(--text);border-bottom:1px solid var(--line-strong)}
+  .contact-list a:hover{color:var(--accent);border-color:var(--accent)}
+  form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;background:var(--surface);border:1px solid var(--line-strong);padding:32px}
+  .field{display:flex;flex-direction:column;gap:8px}
+  .field.full{grid-column:1/-1}
+  label{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+  input,select,textarea{background:var(--bg);border:1px solid var(--line-strong);color:var(--text);padding:12px 14px;font:inherit;font-size:15px;border-radius:2px;width:100%}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent)}
+  select{appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 20px) 50%,calc(100% - 14px) 50%;background-size:6px 6px;background-repeat:no-repeat}
+  textarea{min-height:120px;resize:vertical}
+  .form-foot{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+  .form-foot p{font-size:13px;color:var(--muted)}
+  .sent{grid-column:1/-1;font-family:var(--mono);font-size:13px;color:var(--accent)}
+
+  footer{border-top:1px solid var(--line);padding:32px var(--gutter);display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;font-family:var(--mono);font-size:12px;color:var(--muted);letter-spacing:.04em;background:var(--bg);position:relative;z-index:2}
+  footer a:hover{color:var(--accent)}
+
+  /* ---------- responsive ---------- */
+  @media (max-width:900px){
+    .nav ul{display:none}
+    .hero-inner{grid-template-columns:1fr}
+    .hero{padding-top:52vh;padding-bottom:80px;align-content:end}
+    .hero h1{font-size:clamp(54px,15vw,110px)}
+    .hero-meta{margin-top:32px;gap:16px}
+    .bay{align-items:end;padding-bottom:64px}
+    .panel,.bay:nth-child(even) .panel{margin:0;max-width:100%;padding:24px 0 0}
+    .panel h2{font-size:clamp(44px,12vw,72px)}
+    .panel .desc{margin:14px 0 18px}
+    .specs dd{font-size:22px}
+    .altimeter{display:none}
+    .section-head,.contact-grid{grid-template-columns:1fr;gap:24px}
+    .grid{grid-template-columns:1fr}
+    .strip{grid-template-columns:repeat(2,minmax(0,1fr))}
+    form{grid-template-columns:1fr;padding:22px}
+    .solid{padding:80px 0}
+  }
+  @media (prefers-reduced-motion:reduce){
+    html{scroll-behavior:auto}
+    .panel{transition:none;opacity:1;transform:none}
+    .scroll-cue i{animation:none}
+  }
+</style>
+</head>
+<body>
+
+<canvas id="scene" aria-hidden="true"></canvas>
+<div class="vignette" aria-hidden="true"></div>
+
+<nav class="nav" id="nav">
+  <a class="brand" href="#top" aria-label="Vayuveer home">
+    <svg class="mark" viewBox="0 0 26 26" aria-hidden="true"><path d="M2 5 L13 23 L24 5 M7 5 L13 15 L19 5" fill="none" stroke="#F2A33A" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/></svg>
+    VAYUVEER <small>.in</small>
+  </a>
+  <ul>
+    <li><a href="#fleet">Fleet</a></li>
+    <li><a href="#capabilities">Autonomy</a></li>
+    <li><a href="#compliance">Compliance</a></li>
+    <li><a href="#contact">Contact</a></li>
+  </ul>
+  <a class="btn" href="#contact">Request a demo</a>
+</nav>
+
+<aside class="altimeter" id="altimeter" aria-label="Fleet bays">
+  <a href="#bay-baaz" data-i="0"><span>01 Baaz</span><i></i></a>
+  <a href="#bay-netra" data-i="1"><span>02 Netra</span><i></i></a>
+  <a href="#bay-vahak" data-i="2"><span>03 Vahak</span><i></i></a>
+  <a href="#bay-agni" data-i="3"><span>04 Agni</span><i></i></a>
+  <a href="#bay-rakshak" data-i="4"><span>05 Rakshak</span><i></i></a>
+  <a href="#bay-shuddhi" data-i="5"><span>06 Shuddhi</span><i></i></a>
+  <a href="#bay-pushpak" data-i="6"><span>07 Pushpak</span><i></i></a>
+</aside>
+
+<main>
+  <section class="hero" id="top">
+    <div class="hero-inner">
+      <div>
+        <p class="eyebrow">Unmanned aerial systems · Designed and built in India</p>
+        <h1>Brave in<br>every <em>wind.</em></h1>
+        <p class="lede">Vayuveer builds seven aircraft on one autonomy stack, from a 3.8&nbsp;kg surveillance quad to a two-seat passenger eVTOL. Scroll to descend through the hangar.</p>
+        <div class="cta">
+          <a class="btn primary" href="#fleet">Explore the fleet</a>
+          <a class="btn" href="#contact">Talk to us</a>
+        </div>
+        <div class="hero-meta">
+          <span><b>NPNT</b> native</span>
+          <span><b>DGCA</b> type-cert pathway</span>
+          <span><b>Digital Sky</b> ready</span>
+          <span><b>BVLOS</b> link</span>
+        </div>
+      </div>
+      <div aria-hidden="true"></div>
+    </div>
+    <div class="scroll-cue" aria-hidden="true"><i></i>Scroll to descend</div>
+  </section>
+
+  <section id="fleet" class="fleet" aria-label="The fleet">
+
+    <article class="bay" id="bay-baaz" data-bay="0">
+      <div class="panel">
+        <p class="eyebrow">Bay 01 · Surveillance</p>
+        <h2>Baaz<small>Persistent ISR quadcopter</small></h2>
+        <p class="desc">Persistent eyes for perimeter, border and crowd operations. A 30× EO/IR gimbal, encrypted command link and 55 minutes aloft on a single pack, launched from the back of a jeep.</p>
+        <dl class="specs">
+          <div><dt>Endurance</dt><dd>55<small>min</small></dd></div>
+          <div><dt>Link range</dt><dd>15<small>km</small></dd></div>
+          <div><dt>MTOW</dt><dd>3.8<small>kg</small></dd></div>
+          <div><dt>Wind limit</dt><dd>12<small>m/s</small></dd></div>
+        </dl>
+        <ul class="tags"><li class="hot">Small class</li><li>30× EO/IR gimbal</li><li>AES-256 C2</li><li>Target tracking</li></ul>
+      </div>
+    </article>
+
+    <article class="bay" id="bay-netra" data-bay="1">
+      <div class="panel">
+        <p class="eyebrow">Bay 02 · Inspection</p>
+        <h2>Netra<small>Close-in inspection hexacopter</small></h2>
+        <p class="desc">Guarded rotors for bridges, transmission lines, flare stacks and solar farms. LiDAR and radiometric thermal share one pod, with 360° obstacle sensing for work a metre from the structure.</p>
+        <dl class="specs">
+          <div><dt>Endurance</dt><dd>38<small>min</small></dd></div>
+          <div><dt>LiDAR range</dt><dd>250<small>m</small></dd></div>
+          <div><dt>Thermal</dt><dd>640<small>× 512</small></dd></div>
+          <div><dt>Ingress</dt><dd>IP54</dd></div>
+        </dl>
+        <ul class="tags"><li class="hot">Small class</li><li>Prop guards</li><li>360° avoidance</li><li>Digital twin export</li></ul>
+      </div>
+    </article>
+
+    <article class="bay" id="bay-vahak" data-bay="2">
+      <div class="panel">
+        <p class="eyebrow">Bay 03 · Logistics</p>
+        <h2>Vahak<small>Heavy-lift cargo octocopter</small></h2>
+        <p class="desc">Medical, mining and island supply runs on a hybrid powertrain. Weatherproof cargo bay, automated winch drop, and a route planner that files Digital Sky permissions before wheels-up.</p>
+        <dl class="specs">
+          <div><dt>Payload</dt><dd>25<small>kg</small></dd></div>
+          <div><dt>Range</dt><dd>40<small>km</small></dd></div>
+          <div><dt>MTOW</dt><dd>60<small>kg</small></dd></div>
+          <div><dt>Cruise</dt><dd>65<small>km/h</small></dd></div>
+        </dl>
+        <ul class="tags"><li class="hot">Medium class</li><li>Hybrid power</li><li>Winch drop</li><li>Cold-chain bay</li></ul>
+      </div>
+    </article>
+
+    <article class="bay" id="bay-agni" data-bay="3">
+      <div class="panel">
+        <p class="eyebrow">Bay 04 · Fire safety</p>
+        <h2>Agni<small>High-rise firefighting platform</small></h2>
+        <p class="desc">Reaches the 30th floor before the ladder truck leaves the station. Pressurised foam and water line, extinguishing-ball launcher and a thermal sight to find the seat of the fire through smoke.</p>
+        <dl class="specs">
+          <div><dt>Working height</dt><dd>120<small>m</small></dd></div>
+          <div><dt>Flow</dt><dd>15<small>L/min</small></dd></div>
+          <div><dt>Launcher</dt><dd>6<small>balls</small></dd></div>
+          <div><dt>Heat rating</dt><dd>150<small>°C</small></dd></div>
+        </dl>
+        <ul class="tags"><li class="hot">Medium class</li><li>Tethered option</li><li>Thermal sight</li><li>Foam / water</li></ul>
+      </div>
+    </article>
+
+    <article class="bay" id="bay-rakshak" data-bay="4">
+      <div class="panel">
+        <p class="eyebrow">Bay 05 · Rescue</p>
+        <h2>Rakshak<small>Search and rescue quadcopter</small></h2>
+        <p class="desc">Flood, cliff and open-water response. A 20,000-lumen floodlight, loudhailer and a 20&nbsp;kg winch for flotation rings and medical kits, flown from the riverbank or a moving boat.</p>
+        <dl class="specs">
+          <div><dt>Winch load</dt><dd>20<small>kg</small></dd></div>
+          <div><dt>Floodlight</dt><dd>20,000<small>lm</small></dd></div>
+          <div><dt>Endurance</dt><dd>45<small>min</small></dd></div>
+          <div><dt>Line length</dt><dd>30<small>m</small></dd></div>
+        </dl>
+        <ul class="tags"><li class="hot">Medium class</li><li>Loudhailer</li><li>Thermal search</li><li>Boat launch</li></ul>
+      </div>
+    </article>
+
+    <article class="bay" id="bay-shuddhi" data-bay="5">
+      <div class="panel">
+        <p class="eyebrow">Bay 06 · Facade cleaning</p>
+        <h2>Shuddhi<small>Tethered facade-cleaning platform</small></h2>
+        <p class="desc">Cleans glass, ACP and stone facades without cradles or scaffolding. Power and water arrive up the tether, so endurance is limited by the shift, not the battery.</p>
+        <dl class="specs">
+          <div><dt>Vertical reach</dt><dd>200<small>m</small></dd></div>
+          <div><dt>Flow</dt><dd>12<small>L/min</small></dd></div>
+          <div><dt>Endurance</dt><dd>∞<small>tethered</small></dd></div>
+          <div><dt>Brush width</dt><dd>0.9<small>m</small></dd></div>
+        </dl>
+        <ul class="tags"><li class="hot">Medium class</li><li>Tethered power</li><li>Pure-water rinse</li><li>Standoff sensing</li></ul>
+      </div>
+    </article>
+
+    <article class="bay" id="bay-pushpak" data-bay="6">
+      <div class="panel">
+        <p class="eyebrow">Bay 07 · Passenger</p>
+        <h2>Pushpak<small>Two-seat passenger eVTOL</small></h2>
+        <p class="desc">City and pilgrimage routes without the road. Eight coaxial rotors, triple-redundant flight control and a ballistic parachute. Any four rotors can land it.</p>
+        <dl class="specs">
+          <div><dt>Seats</dt><dd>2</dd></div>
+          <div><dt>Range</dt><dd>35<small>km</small></dd></div>
+          <div><dt>Cruise</dt><dd>100<small>km/h</small></dd></div>
+          <div><dt>Rotors</dt><dd>8<small>coaxial</small></dd></div>
+        </dl>
+        <ul class="tags"><li class="hot">Large class</li><li>Ballistic parachute</li><li>Triple-redundant FCS</li><li>In development</li></ul>
+      </div>
+    </article>
+
+  </section>
+
+  <section class="solid" id="capabilities">
+    <div class="wrap">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">Autonomy stack</p>
+          <h2>One brain,<br>seven airframes</h2>
+        </div>
+        <p class="lede">Every Vayuveer aircraft flies the same flight controller, the same ground station and the same permission workflow. Train a crew once and they can operate the whole fleet.</p>
+      </div>
+      <div class="grid">
+        <div class="cell">
+          <svg viewBox="0 0 24 24"><path d="M12 3v4M12 17v4M3 12h4M17 12h4"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="8"/></svg>
+          <span class="k">Flight control</span>
+          <h3>Vayu FCS</h3>
+          <p>Triple-redundant flight computer with dissimilar IMUs. Loses a motor, a GNSS fix or a link and keeps flying the mission.</p>
+        </div>
+        <div class="cell">
+          <svg viewBox="0 0 24 24"><path d="M4 18h16M6 18V9l6-5 6 5v9"/><path d="M10 18v-5h4v5"/></svg>
+          <span class="k">Permissions</span>
+          <h3>NPNT native</h3>
+          <p>No permission, no take-off. Permission artefacts from Digital Sky are fetched, signed and logged on the aircraft before every flight.</p>
+        </div>
+        <div class="cell">
+          <svg viewBox="0 0 24 24"><path d="M2 12c4-6 16-6 20 0M5 15c3-4 11-4 14 0M8 18c2-2 6-2 8 0"/><circle cx="12" cy="20" r="1"/></svg>
+          <span class="k">Command link</span>
+          <h3>BVLOS ready</h3>
+          <p>Dual-path link over LTE and a 2.4/5.8 GHz mesh, with AES-256 encryption and automatic fail-over between the two.</p>
+        </div>
+        <div class="cell">
+          <svg viewBox="0 0 24 24"><path d="M12 3c-3 5-6 8-6 12a6 6 0 0 0 12 0c0-4-3-7-6-12z"/><path d="M9 16a3 3 0 0 0 3 3"/></svg>
+          <span class="k">Environment</span>
+          <h3>Monsoon hardened</h3>
+          <p>Sealed motors and conformal-coated boards. Rated for driving rain, red dust and 45 °C flight-line temperatures.</p>
+        </div>
+        <div class="cell">
+          <svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="10" rx="1"/><path d="M8 7V4h8v3M3 12h18"/></svg>
+          <span class="k">Payloads</span>
+          <h3>60-second swap</h3>
+          <p>One mechanical and electrical payload bus across the fleet. Gimbal, LiDAR, winch, tank or cargo bay, no tools required.</p>
+        </div>
+        <div class="cell">
+          <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="1"/><path d="M8 20h8M12 16v4M7 10l3 2 3-4 4 3"/></svg>
+          <span class="k">Ground control</span>
+          <h3>One console</h3>
+          <p>Plan, fly and review any aircraft from the same rugged tablet. Flight logs sync to your servers, not ours.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="solid" id="compliance">
+    <div class="wrap">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">Compliance</p>
+          <h2>Built to the<br>Drone Rules, 2022</h2>
+        </div>
+        <p class="lede">Indian airspace is zoned, certified and logged. Vayuveer aircraft are engineered for that system rather than adapted to it afterwards.</p>
+      </div>
+      <div class="strip">
+        <div><span class="n">7</span><b>Type-certification</b><p>Every airframe on the DGCA type-certification pathway through a QCI-approved lab.</p></div>
+        <div><span class="n">UIN</span><b>Digital Sky</b><p>Unique Identification Number issued per aircraft; flight logs retained as the rules require.</p></div>
+        <div><span class="n">RPC</span><b>Pilot training</b><p>Remote Pilot Certificate courses through a DGCA-approved RPTO partner.</p></div>
+        <div><span class="n">4<small>classes</small></span><b>Micro to Large</b><p>Fleet spans Micro, Small, Medium and Large classes under the 2022 rules.</p></div>
+        <div><span class="n">100<small>%</small></span><b>Made in India</b><p>Airframe, flight controller and ground station designed and assembled in India.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="solid" id="contact">
+    <div class="wrap contact-grid">
+      <div>
+        <p class="eyebrow">Contact</p>
+        <h2>Fly with<br><em>Vayuveer.</em></h2>
+        <ul class="contact-list">
+          <li><span class="k">Sales</span><a href="mailto:hello@vayuveer.in">hello@vayuveer.in</a></li>
+          <li><span class="k">Partnerships</span><a href="mailto:partners@vayuveer.in">partners@vayuveer.in</a></li>
+          <li><span class="k">Web</span><a href="https://vayuveer.in">vayuveer.in</a></li>
+        </ul>
+      </div>
+      <form id="demo-form" novalidate>
+        <div class="field"><label for="f-name">Name</label><input id="f-name" name="name" required autocomplete="name"></div>
+        <div class="field"><label for="f-org">Organisation</label><input id="f-org" name="org" autocomplete="organization"></div>
+        <div class="field"><label for="f-email">Email</label><input id="f-email" name="email" type="email" required autocomplete="email"></div>
+        <div class="field">
+          <label for="f-use">Interested in</label>
+          <select id="f-use" name="use">
+            <option>Baaz · Surveillance</option>
+            <option>Netra · Inspection</option>
+            <option>Vahak · Logistics</option>
+            <option>Agni · Fire safety</option>
+            <option>Rakshak · Rescue</option>
+            <option>Shuddhi · Facade cleaning</option>
+            <option>Pushpak · Passenger</option>
+            <option>Whole fleet / partnership</option>
+          </select>
+        </div>
+        <div class="field full"><label for="f-msg">Mission brief</label><textarea id="f-msg" name="msg" placeholder="Where would it fly, how often, and what should it carry or see?"></textarea></div>
+        <div class="form-foot">
+          <p>Opens your mail client with the brief addressed to us.</p>
+          <button class="btn primary" type="submit">Request a demo</button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <footer>
+    <span>© 2026 Vayuveer · <a href="https://vayuveer.in">vayuveer.in</a></span>
+    <span>Baaz · Netra · Vahak · Agni · Rakshak · Shuddhi · Pushpak</span>
+  </footer>
+</main>
+
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+
+/* ============================================================
+   Scene
+   ============================================================ */
+const canvas = document.getElementById('scene');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.15;
+
+const scene = new THREE.Scene();
+scene.fog = new THREE.FogExp2(0x0b0f14, 0.05);
+
+const camera = new THREE.PerspectiveCamera(36, innerWidth / innerHeight, 0.1, 120);
+camera.position.set(0, 0, 9.5);
+
+scene.add(new THREE.HemisphereLight(0x7fb0e0, 0x0b0f14, 1.1));
+const key = new THREE.DirectionalLight(0xfff1dc, 2.4); key.position.set(4, 7, 6); scene.add(key);
+const rim = new THREE.DirectionalLight(0xf2a33a, 1.6); rim.position.set(-6, 3, -5); scene.add(rim);
+const fill = new THREE.PointLight(0x6fa8dc, 14, 40, 1.6); fill.position.set(-4, -2, 5); scene.add(fill);
+
+/* ============================================================
+   Materials
+   ============================================================ */
+const MAT = {
+  carbon: new THREE.MeshStandardMaterial({ color: 0x1c222b, roughness: .55, metalness: .45 }),
+  dark:   new THREE.MeshStandardMaterial({ color: 0x0f1318, roughness: .4,  metalness: .65 }),
+  steel:  new THREE.MeshStandardMaterial({ color: 0x9aa7b5, roughness: .35, metalness: .9 }),
+  pearl:  new THREE.MeshStandardMaterial({ color: 0xdfe6ee, roughness: .3,  metalness: .15 }),
+  glass:  new THREE.MeshStandardMaterial({ color: 0x8fc7ff, roughness: .08, metalness: .2, transparent: true, opacity: .55 }),
+  tint:   new THREE.MeshStandardMaterial({ color: 0x0a1c2c, roughness: .1, metalness: .4, transparent: true, opacity: .85 }),
+  prop:   new THREE.MeshStandardMaterial({ color: 0x272d35, roughness: .5, metalness: .3, side: THREE.DoubleSide }),
+  disk:   new THREE.MeshBasicMaterial({ color: 0x8a97a6, transparent: true, opacity: .07, side: THREE.DoubleSide, depthWrite: false }),
+  line:   new THREE.MeshBasicMaterial({ color: 0x8a97a6, transparent: true, opacity: .6 }),
+  ring:   new THREE.MeshBasicMaterial({ color: 0x6fa8dc, transparent: true, opacity: .22 }),
+};
+const solid = (hex, rough = .45, metal = .3) => new THREE.MeshStandardMaterial({ color: hex, roughness: rough, metalness: metal });
+const glow  = (hex, k = 2.5) => new THREE.MeshStandardMaterial({ color: hex, emissive: hex, emissiveIntensity: k, roughness: .3 });
+
+/* ============================================================
+   Part builders
+   ============================================================ */
+const rotors = [];
+const UP = new THREE.Vector3(0, 1, 0);
+
+function mesh(geo, mat, pos = [0, 0, 0], rot = [0, 0, 0], parent) {
+  const m = new THREE.Mesh(geo, mat);
+  m.position.set(...pos); m.rotation.set(...rot);
+  if (parent) parent.add(m);
+  return m;
+}
+function box(parent, w, h, d, mat, pos, rot) { return mesh(new THREE.BoxGeometry(w, h, d), mat, pos, rot, parent); }
+function cyl(parent, r1, r2, h, mat, pos, rot, seg = 20) { return mesh(new THREE.CylinderGeometry(r1, r2, h, seg), mat, pos, rot, parent); }
+function sphere(parent, r, mat, pos) { return mesh(new THREE.SphereGeometry(r, 20, 16), mat, pos, [0, 0, 0], parent); }
+function capsule(parent, r, len, mat, pos, rot) { return mesh(new THREE.CapsuleGeometry(r, len, 6, 20), mat, pos, rot, parent); }
+
+function strut(parent, from, to, radius = .05, mat = MAT.carbon) {
+  const a = new THREE.Vector3(...from), b = new THREE.Vector3(...to);
+  const len = a.distanceTo(b);
+  const m = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, len, 10), mat);
+  m.position.copy(a).lerp(b, .5);
+  m.quaternion.setFromUnitVectors(UP, b.clone().sub(a).normalize());
+  parent.add(m);
+  return m;
+}
+
+function rotor(parent, x, y, z, r = .55, dir = 1, opts = {}) {
+  const g = new THREE.Group(); g.position.set(x, y, z);
+  cyl(g, .11, .13, .16, MAT.dark);
+  cyl(g, .05, .05, .06, MAT.steel, [0, .11, 0]);
+  const spin = new THREE.Group(); spin.position.y = .1;
+  const blade = new THREE.BoxGeometry(r * 2, .012, .085);
+  const b1 = new THREE.Mesh(blade, MAT.prop); b1.rotation.x = .18;
+  const b2 = new THREE.Mesh(blade, MAT.prop); b2.rotation.y = Math.PI / 2; b2.rotation.x = .18;
+  spin.add(b1, b2);
+  g.add(spin);
+  mesh(new THREE.CircleGeometry(r, 32), MAT.disk, [0, .1, 0], [-Math.PI / 2, 0, 0], g);
+  rotors.push({ spin, dir });
+  if (opts.guard) {
+    mesh(new THREE.TorusGeometry(r + .1, .022, 8, 48), MAT.carbon, [0, .06, 0], [Math.PI / 2, 0, 0], g);
+    for (let i = 0; i < 3; i++) {
+      const a = i * Math.PI * 2 / 3;
+      strut(g, [0, .06, 0], [Math.cos(a) * (r + .1), .06, Math.sin(a) * (r + .1)], .012, MAT.carbon);
+    }
+  }
+  if (opts.flip) g.rotation.x = Math.PI;
+  parent.add(g);
+  return g;
+}
+
+function navLights(parent, pts, y) {
+  pts.forEach(([x, z]) => sphere(parent, .04, glow(z > 0 ? 0xff3b3b : 0x39ff6a, 3), [x, y, z]));
+}
+
+function skids(parent, w = .45, d = .7, h = .45, y = -.15) {
+  [-1, 1].forEach(s => {
+    strut(parent, [s * w, y - h, -d], [s * w, y - h, d], .025, MAT.steel);
+    strut(parent, [s * w * .55, y, -d * .5], [s * w, y - h, -d * .6], .02, MAT.steel);
+    strut(parent, [s * w * .55, y, d * .5], [s * w, y - h, d * .6], .02, MAT.steel);
+  });
+}
+
+function legs(parent, w, d, h, y = -.2) {
+  [[1, 1], [-1, 1], [1, -1], [-1, -1]].forEach(([sx, sz]) => {
+    strut(parent, [sx * w * .6, y, sz * d * .6], [sx * w, y - h, sz * d], .03, MAT.steel);
+    cyl(parent, .09, .09, .04, MAT.dark, [sx * w, y - h, sz * d]);
+  });
+}
+
+function radialArms(parent, n, L, r, accentMat, opts = {}) {
+  const pts = [];
+  for (let i = 0; i < n; i++) {
+    const a = (i / n) * Math.PI * 2 + (opts.offset ?? Math.PI / n);
+    const x = Math.cos(a) * L, z = Math.sin(a) * L;
+    strut(parent, [Math.cos(a) * (opts.inner ?? .45), .02, Math.sin(a) * (opts.inner ?? .45)], [x, .08, z], opts.armR ?? .05);
+    rotor(parent, x, .12, z, r, i % 2 ? 1 : -1, { guard: opts.guard });
+    if (opts.coax) rotor(parent, x, -.02, z, r, i % 2 ? -1 : 1, { flip: true });
+    if (accentMat) cyl(parent, (opts.armR ?? .05) + .02, (opts.armR ?? .05) + .02, .14, accentMat, [Math.cos(a) * L * .55, .05, Math.sin(a) * L * .55], [0, 0, 0]);
+    pts.push([x, z]);
+  }
+  navLights(parent, pts, -.02);
+  return pts;
+}
+
+/* ============================================================
+   Drone builders
+   ============================================================ */
+function buildBaaz(hex = 0xf2a33a) {
+  const g = new THREE.Group();
+  const acc = solid(hex);
+  capsule(g, .2, .75, MAT.carbon, [0, 0, 0], [0, 0, Math.PI / 2]);
+  box(g, .55, .09, .42, acc, [0, .2, 0]);
+  box(g, .34, .04, .3, MAT.dark, [0, .26, 0]);
+  const L = 1.15, pts = [];
+  [[1, 1], [-1, 1], [1, -1], [-1, -1]].forEach(([sx, sz], i) => {
+    strut(g, [sx * .32, .02, sz * .18], [sx * L, .06, sz * L * .8], .045);
+    rotor(g, sx * L, .1, sz * L * .8, .5, i % 2 ? 1 : -1);
+    pts.push([sx * L, sz * L * .8]);
+  });
+  navLights(g, pts, -.03);
+  // gimbal
+  const gm = new THREE.Group(); gm.position.set(.32, -.28, 0);
+  strut(gm, [0, .16, 0], [0, .02, 0], .03, MAT.steel);
+  sphere(gm, .15, MAT.dark, [0, 0, 0]);
+  cyl(gm, .065, .065, .1, MAT.glass, [.15, 0, 0], [0, 0, Math.PI / 2], 16);
+  g.add(gm);
+  // antenna + strobe
+  strut(g, [-.45, .1, 0], [-.6, .45, 0], .012, MAT.steel);
+  sphere(g, .035, glow(0xffffff, 3), [-.6, .47, 0]);
+  skids(g, .38, .55, .4, -.12);
+  return g;
+}
+
+function buildNetra(hex = 0x6fa8dc) {
+  const g = new THREE.Group();
+  const acc = solid(hex);
+  cyl(g, .5, .55, .22, MAT.carbon, [0, 0, 0], [0, 0, 0], 6);
+  cyl(g, .38, .38, .08, acc, [0, .16, 0], [0, 0, 0], 6);
+  // LiDAR puck
+  cyl(g, .16, .16, .18, MAT.dark, [0, .3, 0]);
+  cyl(g, .17, .17, .05, MAT.glass, [0, .3, 0]);
+  radialArms(g, 6, 1.25, .48, acc, { guard: true, inner: .5 });
+  // thermal + RGB pod beneath
+  const pod = new THREE.Group(); pod.position.set(0, -.28, 0);
+  box(pod, .34, .18, .22, MAT.dark);
+  cyl(pod, .05, .05, .08, MAT.glass, [.17, 0, .06], [0, 0, Math.PI / 2], 14);
+  cyl(pod, .04, .04, .08, MAT.glass, [.17, 0, -.06], [0, 0, Math.PI / 2], 14);
+  g.add(pod);
+  legs(g, .45, .45, .4, -.1);
+  return g;
+}
+
+function buildVahak(hex = 0xf2a33a) {
+  const g = new THREE.Group();
+  const acc = solid(hex);
+  box(g, 1.5, .34, .9, MAT.carbon);
+  box(g, 1.2, .1, .7, acc, [0, .22, 0]);
+  cyl(g, .12, .12, .5, MAT.dark, [-.55, .3, 0], [0, 0, Math.PI / 2]); // generator exhaust
+  cyl(g, .06, .06, .3, MAT.steel, [-.85, .34, 0], [0, 0, Math.PI / 2]);
+  radialArms(g, 8, 1.85, .58, acc, { inner: .7, armR: .06 });
+  // cargo pod on straps
+  const pod = new THREE.Group(); pod.position.set(0, -.75, 0);
+  box(pod, .95, .55, .7, solid(0x2a313b, .6, .2));
+  box(pod, .97, .1, .72, acc, [0, .1, 0]);
+  box(pod, .97, .1, .72, acc, [0, -.2, 0]);
+  [[.4, .3], [-.4, .3], [.4, -.3], [-.4, -.3]].forEach(([x, z]) => strut(pod, [x, .27, z], [x * .6, .55, z * .6], .012, MAT.steel));
+  g.add(pod);
+  legs(g, .7, .5, .95, -.15);
+  return g;
+}
+
+function buildAgni(hex = 0xe23d2e) {
+  const g = new THREE.Group();
+  const acc = solid(hex, .4, .3);
+  const white = MAT.pearl;
+  box(g, 1.1, .3, .8, MAT.carbon);
+  box(g, .8, .1, .55, acc, [0, .2, 0]);
+  box(g, .3, .11, .56, white, [.2, .2, 0]);
+  box(g, .3, .11, .56, white, [-.4, .2, 0]);
+  sphere(g, .05, glow(0xff2a2a, 4), [0, .32, .2]);
+  sphere(g, .05, glow(0x3b7bff, 4), [0, .32, -.2]);
+  radialArms(g, 6, 1.5, .55, acc, { inner: .55, armR: .055 });
+  // tank
+  capsule(g, .2, .7, acc, [0, -.4, 0], [0, 0, Math.PI / 2]);
+  box(g, .3, .42, .18, white, [.0, -.4, 0]);
+  // nozzle boom + ball launcher
+  strut(g, [.5, -.3, 0], [1.25, -.2, 0], .03, MAT.steel);
+  cyl(g, .035, .06, .16, MAT.dark, [1.32, -.19, 0], [0, 0, Math.PI / 2]);
+  cyl(g, .09, .09, .5, MAT.dark, [.3, -.15, -.45], [0, 0, Math.PI / 2]);
+  cyl(g, .1, .1, .04, acc, [.56, -.15, -.45], [0, 0, Math.PI / 2]);
+  // thermal sight
+  sphere(g, .1, MAT.dark, [.5, -.05, .35]);
+  cyl(g, .045, .045, .08, MAT.glass, [.6, -.05, .35], [0, 0, Math.PI / 2], 14);
+  legs(g, .5, .45, .75, -.2);
+  return g;
+}
+
+function buildRakshak(hex = 0xff6a1f) {
+  const g = new THREE.Group();
+  const acc = solid(hex);
+  capsule(g, .24, .9, MAT.carbon, [0, 0, 0], [0, 0, Math.PI / 2]);
+  box(g, .7, .1, .48, acc, [0, .22, 0]);
+  const L = 1.35, pts = [];
+  [[1, 1], [-1, 1], [1, -1], [-1, -1]].forEach(([sx, sz], i) => {
+    strut(g, [sx * .4, .02, sz * .2], [sx * L, .08, sz * L * .8], .05);
+    rotor(g, sx * L, .12, sz * L * .8, .6, i % 2 ? 1 : -1);
+    pts.push([sx * L, sz * L * .8]);
+  });
+  navLights(g, pts, -.03);
+  // floodlight
+  const fl = new THREE.Group(); fl.position.set(.5, -.3, 0); fl.rotation.z = -.5;
+  cyl(fl, .16, .12, .14, MAT.dark);
+  mesh(new THREE.CircleGeometry(.14, 24), glow(0xfff4d6, 6), [0, -.075, 0], [Math.PI / 2, 0, 0], fl);
+  g.add(fl);
+  // loudhailer
+  cyl(g, .05, .13, .22, MAT.dark, [.45, -.05, .38], [0, 0, -Math.PI / 2 + .3]);
+  // winch + line + basket
+  cyl(g, .1, .1, .22, MAT.dark, [-.2, -.3, 0], [Math.PI / 2, 0, 0]);
+  strut(g, [-.2, -.35, 0], [-.2, -1.55, 0], .006, MAT.line);
+  const bk = new THREE.Group(); bk.position.set(-.2, -1.7, 0);
+  mesh(new THREE.TorusGeometry(.32, .06, 10, 30), acc, [0, 0, 0], [Math.PI / 2, 0, 0], bk);
+  strut(bk, [0, .15, 0], [-.3, 0, 0], .006, MAT.line);
+  strut(bk, [0, .15, 0], [.3, 0, 0], .006, MAT.line);
+  strut(bk, [0, .15, 0], [0, 0, .3], .006, MAT.line);
+  g.add(bk);
+  strut(g, [-.55, .12, 0], [-.7, .5, 0], .012, MAT.steel);
+  sphere(g, .04, glow(0xff2a2a, 4), [-.7, .52, 0]);
+  skids(g, .42, .6, .42, -.12);
+  return g;
+}
+
+function buildShuddhi(hex = 0x3fc9c0) {
+  const g = new THREE.Group();
+  const acc = solid(hex);
+  box(g, 1.0, .3, .8, MAT.carbon);
+  box(g, .75, .1, .55, acc, [0, .2, 0]);
+  // water tank on top
+  capsule(g, .17, .45, MAT.pearl, [-.05, .38, 0], [0, 0, Math.PI / 2]);
+  const L = 1.25, pts = [];
+  [[1, 1], [-1, 1], [1, -1], [-1, -1]].forEach(([sx, sz], i) => {
+    strut(g, [sx * .35, .02, sz * .22], [sx * L * .85, .08, sz * L], .05);
+    rotor(g, sx * L * .85, .12, sz * L, .55, i % 2 ? 1 : -1);
+    pts.push([sx * L * .85, sz * L]);
+  });
+  navLights(g, pts, -.03);
+  // forward boom with spray bar + brush roller
+  strut(g, [.45, -.05, 0], [1.55, -.1, 0], .04, MAT.steel);
+  strut(g, [.45, .12, 0], [1.3, -.08, 0], .02, MAT.steel);
+  cyl(g, .035, .035, 1.6, MAT.steel, [1.6, -.05, 0], [Math.PI / 2, 0, 0]);
+  for (let i = -3; i <= 3; i++) cyl(g, .02, .03, .06, acc, [1.62, -.11, i * .24], [0, 0, 0], 8);
+  cyl(g, .11, .11, 1.7, acc, [1.85, -.2, 0], [Math.PI / 2, 0, 0], 16);
+  cyl(g, .12, .12, .05, MAT.dark, [1.85, -.2, .86], [Math.PI / 2, 0, 0]);
+  cyl(g, .12, .12, .05, MAT.dark, [1.85, -.2, -.86], [Math.PI / 2, 0, 0]);
+  // standoff sensors
+  sphere(g, .05, glow(0x3fc9c0, 2), [1.55, .05, .5]);
+  sphere(g, .05, glow(0x3fc9c0, 2), [1.55, .05, -.5]);
+  // tether trailing down and back
+  strut(g, [-.3, -.18, 0], [-1.6, -4.5, .3], .009, MAT.line);
+  cyl(g, .07, .07, .1, MAT.dark, [-.3, -.2, 0]);
+  skids(g, .4, .55, .4, -.14);
+  return g;
+}
+
+function buildPushpak(hex = 0xf2a33a) {
+  const g = new THREE.Group();
+  const acc = solid(hex);
+  // cabin
+  capsule(g, .55, 1.15, MAT.pearl, [0, 0, 0], [0, 0, Math.PI / 2]);
+  mesh(new THREE.SphereGeometry(.5, 28, 18, 0, Math.PI * 2, 0, Math.PI / 2), MAT.tint, [.42, .28, 0], [0, 0, 0], g).scale.set(1.35, .9, 1.05);
+  box(g, 1.3, .16, 1.13, MAT.tint, [0, .12, 0]);
+  box(g, 2.35, .08, .3, acc, [0, -.1, .55]);
+  box(g, 2.35, .08, .3, acc, [0, -.1, -.55]);
+  // tail fin
+  box(g, .5, .5, .05, acc, [-1.1, .35, 0]);
+  box(g, .9, .06, .8, MAT.pearl, [-1.05, .05, 0]);
+  // arms with coax rotors
+  const L = 2.0, pts = [];
+  [[1, 1], [-1, 1], [1, -1], [-1, -1]].forEach(([sx, sz], i) => {
+    strut(g, [sx * .7, .05, sz * .45], [sx * L, .28, sz * L * .78], .07);
+    strut(g, [sx * .7, -.15, sz * .45], [sx * L, .1, sz * L * .78], .035);
+    rotor(g, sx * L, .32, sz * L * .78, .78, i % 2 ? 1 : -1);
+    rotor(g, sx * L, .12, sz * L * .78, .78, i % 2 ? -1 : 1, { flip: true });
+    pts.push([sx * L, sz * L * .78]);
+  });
+  navLights(g, pts, .0);
+  sphere(g, .05, glow(0xffffff, 4), [-1.1, .62, 0]);
+  sphere(g, .05, glow(0xff2a2a, 4), [.9, -.35, 0]);
+  skids(g, .5, .9, .55, -.45);
+  return g;
+}
+
+/* ============================================================
+   Placement
+   ============================================================ */
+const BAYS = [
+  { build: buildBaaz,    dist: 9.0,  scale: 1.0 },
+  { build: buildNetra,   dist: 9.0,  scale: 1.0 },
+  { build: buildVahak,   dist: 11.5, scale: 1.0 },
+  { build: buildAgni,    dist: 10.5, scale: 1.0 },
+  { build: buildRakshak, dist: 10.5, scale: 1.0 },
+  { build: buildShuddhi, dist: 11.0, scale: .95 },
+  { build: buildPushpak, dist: 13.5, scale: 1.0 },
+];
+const S = 11;                     // vertical spacing between bays
+const isMobile = () => innerWidth < 900;
+const drones = [];
+const rings = [];
+
+const hero = buildBaaz();
+hero.scale.setScalar(1.35);
+scene.add(hero);
+
+BAYS.forEach((b, i) => {
+  const d = b.build();
+  d.scale.setScalar(b.scale);
+  d.userData.i = i;
+  d.rotation.y = i * .9;
+  scene.add(d);
+  drones.push(d);
+  // hangar ring behind each bay
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(3.1, .012, 6, 96), MAT.ring);
+  const ticks = new THREE.Group();
+  for (let t = 0; t < 12; t++) {
+    const a = t / 12 * Math.PI * 2, r0 = 3.2, r1 = t % 3 ? 3.32 : 3.5;
+    strut(ticks, [Math.cos(a) * r0, Math.sin(a) * r0, 0], [Math.cos(a) * r1, Math.sin(a) * r1, 0], .01, MAT.ring);
+  }
+  ring.add(ticks);
+  scene.add(ring);
+  rings.push(ring);
+});
+
+function layout() {
+  const m = isMobile();
+  const side = m ? 0 : 1.75;
+  const lift = m ? 1.1 : 0.05;
+  hero.position.set(m ? 0 : 1.95, m ? 1.6 : .15, 0);
+  drones.forEach((d, i) => {
+    const x = (i % 2 === 0 ? side : -side);
+    d.position.set(x, -S * (i + 1) + lift, 0);
+    d.userData.baseY = d.position.y;
+    rings[i].position.set(x, -S * (i + 1) + lift, -2.6);
+  });
+}
+layout();
+
+/* particles */
+{
+  const N = 900, pos = new Float32Array(N * 3);
+  for (let i = 0; i < N; i++) {
+    pos[i * 3] = (Math.random() - .5) * 26;
+    pos[i * 3 + 1] = 8 - Math.random() * (S * 9);
+    pos[i * 3 + 2] = -8 + Math.random() * 12;
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  const pts = new THREE.Points(geo, new THREE.PointsMaterial({ color: 0x8a97a6, size: .045, transparent: true, opacity: .55, depthWrite: false }));
+  pts.name = 'dust';
+  scene.add(pts);
+}
+
+/* ============================================================
+   Scroll → camera
+   ============================================================ */
+const fleet = document.getElementById('fleet');
+const bays = [...document.querySelectorAll('.bay')];
+const altimeter = document.getElementById('altimeter');
+const altLinks = [...altimeter.querySelectorAll('a')];
+const nav = document.getElementById('nav');
+
+const cam = { y: 0, z: 9.5, ty: 0, tz: 9.5 };
+const mouse = { x: 0, y: 0, tx: 0, ty: 0 };
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function bayIndex() {
+  const vh = innerHeight;
+  return THREE.MathUtils.clamp((scrollY - fleet.offsetTop) / vh, -1, BAYS.length - 1);
+}
+function distAt(idx) {
+  if (idx <= 0) return THREE.MathUtils.lerp(9.5, BAYS[0].dist, idx + 1);
+  const a = Math.floor(idx), b = Math.min(a + 1, BAYS.length - 1);
+  return THREE.MathUtils.lerp(BAYS[a].dist, BAYS[b].dist, idx - a);
+}
+
+function onScroll() {
+  const idx = bayIndex();
+  cam.ty = -S * (1 + idx);
+  cam.tz = distAt(idx) + (isMobile() ? 2 : 0);
+  nav.classList.toggle('scrolled', scrollY > 40);
+  const inFleet = idx > -.4 && scrollY < fleet.offsetTop + fleet.offsetHeight - innerHeight * .6;
+  altimeter.classList.toggle('show', inFleet);
+  const active = Math.round(idx);
+  altLinks.forEach((a, i) => a.classList.toggle('active', inFleet && i === active));
+}
+addEventListener('scroll', onScroll, { passive: true });
+onScroll();
+
+addEventListener('pointermove', e => {
+  mouse.tx = (e.clientX / innerWidth - .5) * 2;
+  mouse.ty = (e.clientY / innerHeight - .5) * 2;
+});
+
+const io = new IntersectionObserver(entries => {
+  entries.forEach(en => { if (en.isIntersecting) en.target.classList.add('in'); });
+}, { threshold: .35 });
+bays.forEach(b => io.observe(b));
+
+/* ============================================================
+   Render loop
+   ============================================================ */
+const clock = new THREE.Clock();
+let raf = null;
+function frame() {
+  const dt = Math.min(clock.getDelta(), .05);
+  const t = clock.elapsedTime;
+
+  cam.y += (cam.ty - cam.y) * (1 - Math.exp(-dt * 5));
+  cam.z += (cam.tz - cam.z) * (1 - Math.exp(-dt * 4));
+  mouse.x += (mouse.tx - mouse.x) * (1 - Math.exp(-dt * 3));
+  mouse.y += (mouse.ty - mouse.y) * (1 - Math.exp(-dt * 3));
+
+  camera.position.set(mouse.x * .35, cam.y + mouse.y * -.2, cam.z);
+  camera.lookAt(0, cam.y, 0);
+
+  const spin = reduced ? 6 : 38;
+  for (const r of rotors) r.spin.rotation.y += dt * spin * r.dir;
+
+  // hero drone: hover + banks toward the pointer
+  hero.position.y += 0; // base set in layout()
+  hero.rotation.y = -.55 + Math.sin(t * .25) * .18 + mouse.x * .25;
+  hero.rotation.x = .12 + mouse.y * .12 + Math.sin(t * .9) * .02;
+  hero.rotation.z = -mouse.x * .18 + Math.sin(t * .7) * .03;
+  hero.position.y = (isMobile() ? 1.6 : .15) + Math.sin(t * 1.1) * .08;
+
+  drones.forEach((d, i) => {
+    d.rotation.y += dt * .22;
+    d.rotation.z = Math.sin(t * .6 + i) * .04;
+    d.rotation.x = Math.cos(t * .5 + i) * .04;
+    d.position.y = d.userData.baseY + Math.sin(t * 1.2 + i * 1.3) * .08;
+  });
+  const dust = scene.getObjectByName('dust');
+  if (dust) dust.rotation.y = t * .015;
+
+  renderer.render(scene, camera);
+  raf = requestAnimationFrame(frame);
+}
+frame();
+
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) { cancelAnimationFrame(raf); raf = null; }
+  else if (!raf) { clock.getDelta(); frame(); }
+});
+
+addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+  layout();
+  onScroll();
+});
+
+/* ============================================================
+   Contact form → mail client
+   ============================================================ */
+const form = document.getElementById('demo-form');
+form.addEventListener('submit', e => {
+  e.preventDefault();
+  const f = new FormData(form);
+  const name = (f.get('name') || '').trim(), email = (f.get('email') || '').trim();
+  if (!name || !email) { form.querySelector(name ? '#f-email' : '#f-name').focus(); return; }
+  const subject = encodeURIComponent(`Demo request · ${f.get('use')}`);
+  const body = encodeURIComponent(
+    `Name: ${name}\nOrganisation: ${f.get('org') || '-'}\nEmail: ${email}\nInterested in: ${f.get('use')}\n\nMission brief:\n${f.get('msg') || '-'}\n`);
+  location.href = `mailto:hello@vayuveer.in?subject=${subject}&body=${body}`;
+  let note = form.querySelector('.sent');
+  if (!note) { note = document.createElement('p'); note.className = 'sent'; form.appendChild(note); }
+  note.textContent = 'Opening your mail client. If nothing happens, write to hello@vayuveer.in.';
+});
+</script>
+<!-- ARTIFACT:END -->
+</body>
+</html>
