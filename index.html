@@ -212,7 +212,7 @@
   <a href="#bay-vahak" data-i="2"><span>03 Vahak</span><i></i></a>
   <a href="#bay-agni" data-i="3"><span>04 Agni</span><i></i></a>
   <a href="#bay-rakshak" data-i="4"><span>05 Rakshak</span><i></i></a>
-  <a href="#bay-shuddhi" data-i="5"><span>06 Shuddhi</span><i></i></a>
+  <a href="#bay-sevak" data-i="5"><span>06 Sevak</span><i></i></a>
   <a href="#bay-pushpak" data-i="6"><span>07 Pushpak</span><i></i></a>
 </aside>
 
@@ -316,10 +316,10 @@
       </div>
     </article>
 
-    <article class="bay" id="bay-shuddhi" data-bay="5">
+    <article class="bay" id="bay-sevak" data-bay="5">
       <div class="panel">
         <p class="eyebrow">Bay 06 · Facade cleaning</p>
-        <h2>Shuddhi<small>Tethered facade-cleaning platform</small></h2>
+        <h2>Sevak<small>Tethered facade-cleaning platform</small></h2>
         <p class="desc">Cleans glass, ACP and stone facades without cradles or scaffolding. Power and water arrive up the tether, so endurance is limited by the shift, not the battery.</p>
         <dl class="specs">
           <div><dt>Vertical reach</dt><dd>200<small>m</small></dd></div>
@@ -440,7 +440,7 @@
             <option>Vahak · Logistics</option>
             <option>Agni · Fire safety</option>
             <option>Rakshak · Rescue</option>
-            <option>Shuddhi · Facade cleaning</option>
+            <option>Sevak · Facade cleaning</option>
             <option>Pushpak · Passenger</option>
             <option>Whole fleet / partnership</option>
           </select>
@@ -456,7 +456,7 @@
 
   <footer>
     <span>© 2026 Vayuveer · <a href="https://vayuveer.in">vayuveer.in</a></span>
-    <span>Baaz · Netra · Vahak · Agni · Rakshak · Shuddhi · Pushpak</span>
+    <span>Baaz · Netra · Vahak · Agni · Rakshak · Sevak · Pushpak</span>
   </footer>
 </main>
 
@@ -467,7 +467,16 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.m
    Scene
    ============================================================ */
 const canvas = document.getElementById('scene');
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
+let renderer;
+try {
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
+} catch (err) {
+  const n = document.createElement('div');
+  n.style.cssText = 'position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:30;background:#131A22;border:1px solid rgba(138,151,166,.35);padding:12px 18px;font:13px/1.5 "JetBrains Mono",monospace;color:#E8EDF2;max-width:90vw';
+  n.textContent = 'The 3D hangar needs WebGL. Open this file in Chrome, Safari, Edge or Firefox to see the drones.';
+  document.body.appendChild(n);
+  throw err;
+}
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.setSize(innerWidth, innerHeight);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -715,7 +724,7 @@ function buildRakshak(hex = 0xff6a1f) {
   return g;
 }
 
-function buildShuddhi(hex = 0x3fc9c0) {
+function buildSevak(hex = 0x3fc9c0) {
   const g = new THREE.Group();
   const acc = solid(hex);
   box(g, 1.0, .3, .8, MAT.carbon);
@@ -784,7 +793,7 @@ const BAYS = [
   { build: buildVahak,   dist: 11.5, scale: 1.0 },
   { build: buildAgni,    dist: 10.5, scale: 1.0 },
   { build: buildRakshak, dist: 10.5, scale: 1.0 },
-  { build: buildShuddhi, dist: 11.0, scale: .95 },
+  { build: buildSevak, dist: 11.0, scale: .95 },
   { build: buildPushpak, dist: 13.5, scale: 1.0 },
 ];
 const S = 11;                     // vertical spacing between bays
