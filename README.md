@@ -31,7 +31,7 @@ Everything that names a product or a number is placeholder copy written to look 
 
 | What | Where in `index.html` |
 |---|---|
-| Product names (Baaz, Netra, Vahak, Agni, Rakshak, Nirmal, Pushpak) | each `<article class="bay">`, the altimeter rail, the contact form `<select>`, the footer |
+| Product names (Baaz, Netra, Vahak, Agni, Rakshak, Urdhva, Pushpak) | each `<article class="bay">`, the altimeter rail, the contact form `<select>`, the footer |
 | Specs (endurance, payload, range, etc.) | the `<dl class="specs">` block inside each bay |
 | Contact emails | `hello@vayuveer.in`, `partners@vayuveer.in` in the contact section and the form script |
 | Autonomy / compliance claims | `#capabilities` and `#compliance` sections |
