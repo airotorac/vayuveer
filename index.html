@@ -274,15 +274,15 @@
     <article class="bay" id="bay-vahak" data-bay="2">
       <div class="panel">
         <p class="eyebrow">Bay 03 · Logistics</p>
-        <h2>Vahak<small>Heavy-lift cargo octocopter</small></h2>
-        <p class="desc">Medical, mining and island supply runs on a hybrid powertrain. Weatherproof cargo bay, automated winch drop, and a route planner that files Digital Sky permissions before wheels-up.</p>
+        <h2>Vahak<small>Heavy-lift cargo octa-quad</small></h2>
+        <p class="desc">Medical, mining and island supply runs on a hybrid powertrain. Eight motors on four arms in a coaxial X8 layout, so it keeps flying with a motor out. Weatherproof cargo bay, automated winch drop, and a route planner that files Digital Sky permissions before wheels-up.</p>
         <dl class="specs">
           <div><dt>Payload</dt><dd>25<small>kg</small></dd></div>
           <div><dt>Range</dt><dd>40<small>km</small></dd></div>
           <div><dt>MTOW</dt><dd>60<small>kg</small></dd></div>
           <div><dt>Cruise</dt><dd>65<small>km/h</small></dd></div>
         </dl>
-        <ul class="tags"><li class="hot">Medium class</li><li>Hybrid power</li><li>Winch drop</li><li>Cold-chain bay</li></ul>
+        <ul class="tags"><li class="hot">Medium class</li><li>X8 coaxial</li><li>Hybrid power</li><li>Winch drop</li><li>Cold-chain bay</li></ul>
       </div>
     </article>
 
@@ -652,7 +652,8 @@ function buildVahak(hex = 0xf2a33a) {
   box(g, 1.2, .1, .7, acc, [0, .22, 0]);
   cyl(g, .12, .12, .5, MAT.dark, [-.55, .3, 0], [0, 0, Math.PI / 2]); // generator exhaust
   cyl(g, .06, .06, .3, MAT.steel, [-.85, .34, 0], [0, 0, Math.PI / 2]);
-  radialArms(g, 8, 1.85, .58, acc, { inner: .7, armR: .06 });
+  // octa-quad: four arms, coaxial rotor pairs (X8)
+  radialArms(g, 4, 1.8, .66, acc, { inner: .7, armR: .07, coax: true });
   // cargo pod on straps
   const pod = new THREE.Group(); pod.position.set(0, -.75, 0);
   box(pod, .95, .55, .7, solid(0x2a313b, .6, .2));
