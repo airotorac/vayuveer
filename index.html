@@ -259,7 +259,7 @@
     <article class="bay" id="bay-netra" data-bay="1">
       <div class="panel">
         <p class="eyebrow">Bay 02 · Inspection</p>
-        <h2>Netra<small>Close-in inspection hexacopter</small></h2>
+        <h2>Netra<small>Close-in inspection octa-quad</small></h2>
         <p class="desc">Guarded rotors for bridges, transmission lines, flare stacks and solar farms. LiDAR and radiometric thermal share one pod, with 360° obstacle sensing for work a metre from the structure.</p>
         <dl class="specs">
           <div><dt>Endurance</dt><dd>38<small>min</small></dd></div>
@@ -634,7 +634,8 @@ function buildNetra(hex = 0x6fa8dc) {
   // LiDAR puck
   cyl(g, .16, .16, .18, MAT.dark, [0, .3, 0]);
   cyl(g, .17, .17, .05, MAT.glass, [0, .3, 0]);
-  radialArms(g, 6, 1.25, .48, acc, { guard: true, inner: .5 });
+  // octa-quad: four guarded arms, coaxial rotor pairs (X8)
+  radialArms(g, 4, 1.3, .55, acc, { guard: true, inner: .5, coax: true });
   // thermal + RGB pod beneath
   const pod = new THREE.Group(); pod.position.set(0, -.28, 0);
   box(pod, .34, .18, .22, MAT.dark);
@@ -675,7 +676,8 @@ function buildAgni(hex = 0xe23d2e) {
   box(g, .3, .11, .56, white, [-.4, .2, 0]);
   sphere(g, .05, glow(0xff2a2a, 4), [0, .32, .2]);
   sphere(g, .05, glow(0x3b7bff, 4), [0, .32, -.2]);
-  radialArms(g, 6, 1.5, .55, acc, { inner: .55, armR: .055 });
+  // octa-quad: four arms, coaxial rotor pairs (X8)
+  radialArms(g, 4, 1.55, .62, acc, { inner: .55, armR: .06, coax: true });
   // tank
   capsule(g, .2, .7, acc, [0, -.4, 0], [0, 0, Math.PI / 2]);
   box(g, .3, .42, .18, white, [.0, -.4, 0]);
