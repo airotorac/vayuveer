@@ -4,10 +4,21 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <!-- ARTIFACT:BEGIN -->
-<title>Vayuveer</title>
+<title>Vayuveer | Drones and unmanned aircraft built in India</title>
+<link rel="canonical" href="https://vayuveer.in/">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#0B0F14">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Vayuveer">
+<meta property="og:url" content="https://vayuveer.in/">
+<meta property="og:title" content="Vayuveer | Drones and unmanned aircraft built in India">
+<meta property="og:description" content="Seven unmanned aircraft on one autonomy stack, designed and built in India: surveillance, inspection, logistics, fire safety, rescue, facade cleaning and passenger drones.">
+<meta name="twitter:card" content="summary">
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://vayuveer.in/#org","name":"Vayuveer","url":"https://vayuveer.in/","logo":"https://vayuveer.in/favicon.svg","email":"hello@vayuveer.in","description":"Vayuveer designs and builds unmanned aircraft in India: surveillance, inspection, logistics, fire safety, rescue, facade cleaning and passenger drones."},{"@type":"WebSite","@id":"https://vayuveer.in/#site","url":"https://vayuveer.in/","name":"Vayuveer","publisher":{"@id":"https://vayuveer.in/#org"},"inLanguage":"en-IN"},{"@type":"FAQPage","@id":"https://vayuveer.in/#faq","mainEntity":[{"@type":"Question","name":"What does Vayuveer build?","acceptedAnswer":{"@type":"Answer","text":"Vayuveer builds seven unmanned aircraft on one autonomy stack: Baaz for surveillance, Netra for inspection, Vahak for logistics, Agni for firefighting, Rakshak for search and rescue, Urdhva for facade cleaning, and Pushpak, a two-seat passenger eVTOL that is in development."}},{"@type":"Question","name":"Are Vayuveer drones made in India?","acceptedAnswer":{"@type":"Answer","text":"Yes. The airframe, flight controller and ground station are designed and assembled in India."}},{"@type":"Question","name":"Do the aircraft comply with the Drone Rules, 2022?","acceptedAnswer":{"@type":"Answer","text":"They are engineered for the Indian system from the start. Every airframe is on the DGCA type-certification pathway, each aircraft carries a Unique Identification Number on Digital Sky, and NPNT is native: no permission, no take-off."}},{"@type":"Question","name":"Can one crew operate the whole fleet?","acceptedAnswer":{"@type":"Answer","text":"Yes. Every Vayuveer aircraft flies the same flight controller, the same ground station and the same permission workflow, so a crew trained once can operate all seven."}},{"@type":"Question","name":"Can payloads be swapped between aircraft?","acceptedAnswer":{"@type":"Answer","text":"The fleet shares one mechanical and electrical payload bus. A gimbal, LiDAR, winch, tank or cargo bay swaps in about 60 seconds with no tools."}},{"@type":"Question","name":"How do I request a demo?","acceptedAnswer":{"@type":"Answer","text":"Use the form on this page or write to hello@vayuveer.in with where the aircraft would fly, how often, and what it should carry or see."}}]}]}</script>
 <meta name="description" content="Vayuveer designs and builds unmanned aircraft in India: surveillance, inspection, logistics, fire safety, rescue, facade cleaning and passenger drones.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Manrope:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
 <style>
   :root{
@@ -127,6 +138,9 @@
   .cell .k{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--steel)}
   .cell h3{font-size:26px;font-weight:600;text-transform:uppercase;letter-spacing:.03em}
   .cell p{color:var(--muted);font-size:15px}
+  .faq .cell{min-height:0}
+  .faq .cell h3{text-transform:none;line-height:1.1}
+  .faq .cell a{color:var(--text);border-bottom:1px solid var(--line-strong)}
   .cell svg{width:34px;height:34px;stroke:var(--accent);fill:none;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round}
 
   /* compliance strip */
@@ -418,6 +432,44 @@
     </div>
   </section>
 
+  <section class="solid" id="faq">
+    <div class="wrap">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">FAQ</p>
+          <h2>Questions,<br>answered</h2>
+        </div>
+        <p class="lede">The short version of what Vayuveer builds, how it is certified and how to get an aircraft in front of your team.</p>
+      </div>
+      <div class="grid faq">
+        <div class="cell">
+          <h3>What does Vayuveer build?</h3>
+          <p>Vayuveer builds seven unmanned aircraft on one autonomy stack: Baaz for surveillance, Netra for inspection, Vahak for logistics, Agni for firefighting, Rakshak for search and rescue, Urdhva for facade cleaning, and Pushpak, a two-seat passenger eVTOL that is in development.</p>
+        </div>
+        <div class="cell">
+          <h3>Are Vayuveer drones made in India?</h3>
+          <p>Yes. The airframe, flight controller and ground station are designed and assembled in India.</p>
+        </div>
+        <div class="cell">
+          <h3>Do the aircraft comply with the Drone Rules, 2022?</h3>
+          <p>They are engineered for the Indian system from the start. Every airframe is on the DGCA type-certification pathway, each aircraft carries a Unique Identification Number on Digital Sky, and NPNT is native: no permission, no take-off.</p>
+        </div>
+        <div class="cell">
+          <h3>Can one crew operate the whole fleet?</h3>
+          <p>Yes. Every Vayuveer aircraft flies the same flight controller, the same ground station and the same permission workflow, so a crew trained once can operate all seven.</p>
+        </div>
+        <div class="cell">
+          <h3>Can payloads be swapped between aircraft?</h3>
+          <p>The fleet shares one mechanical and electrical payload bus. A gimbal, LiDAR, winch, tank or cargo bay swaps in about 60 seconds with no tools.</p>
+        </div>
+        <div class="cell">
+          <h3>How do I request a demo?</h3>
+          <p>Use the form on this page or write to <a href="mailto:hello@vayuveer.in">hello@vayuveer.in</a> with where the aircraft would fly, how often, and what it should carry or see.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <section class="solid" id="contact">
     <div class="wrap contact-grid">
       <div>
@@ -462,7 +514,7 @@
 </main>
 
 <script type="module">
-import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
 
 /* ============================================================
    Scene
