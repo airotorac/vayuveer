@@ -647,79 +647,146 @@ function parseGLB(buf){
 
 /* ============================================================
    Procedural fleet models (metres, Y up, nose toward -Z)
+   Motors, props and the gimbal are cloned from the real AX4 export and scaled.
    ============================================================ */
+const carbonTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d');
+  x.fillStyle = '#17191d'; x.fillRect(0,0,128,128);
+  for (let j=0;j<8;j++) for (let i=0;i<8;i++){ const h = (i+j)%2===0; const g = x.createLinearGradient(i*16, j*16, h ? i*16+16 : i*16, h ? j*16 : j*16+16);
+    g.addColorStop(0,'#0e1013'); g.addColorStop(.5,'#2a2e34'); g.addColorStop(1,'#0e1013'); x.fillStyle = g; x.fillRect(i*16+1, j*16+1, 14, 14); }
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(8,8); t.colorSpace = THREE.SRGBColorSpace; return t; })();
 const MAT = {
-  carbon: new THREE.MeshPhysicalMaterial({ color:0x15181c, roughness:.38, metalness:.45, clearcoat:.8, clearcoatRoughness:.18 }),
+  carbon: new THREE.MeshPhysicalMaterial({ map:carbonTex, bumpMap:carbonTex, bumpScale:.0015, color:0xffffff, roughness:.32, metalness:.35, clearcoat:1, clearcoatRoughness:.12 }),
+  tube:   new THREE.MeshPhysicalMaterial({ map:carbonTex, color:0xdddddd, roughness:.3, metalness:.4, clearcoat:1, clearcoatRoughness:.1 }),
   poly:   new THREE.MeshPhysicalMaterial({ color:0x111317, roughness:.5, metalness:.05 }),
   blue:   new THREE.MeshPhysicalMaterial({ color:new THREE.Color(.006,.15,.72), roughness:.34, metalness:.12, clearcoat:.6, clearcoatRoughness:.1 }),
+  anod:   new THREE.MeshPhysicalMaterial({ color:new THREE.Color(.01,.16,.75), roughness:.26, metalness:1 }),
   alu:    new THREE.MeshPhysicalMaterial({ color:0x9ea4aa, roughness:.28, metalness:1 }),
+  aludk:  new THREE.MeshPhysicalMaterial({ color:0x2a2d33, roughness:.3, metalness:1 }),
   copper: new THREE.MeshPhysicalMaterial({ color:new THREE.Color(.85,.38,.14), roughness:.35, metalness:1 }),
-  glass:  new THREE.MeshPhysicalMaterial({ color:0x0a1c2c, roughness:.08, metalness:.4, clearcoat:1 }),
+  glass:  new THREE.MeshPhysicalMaterial({ color:0x0a1c2c, roughness:.06, metalness:.4, clearcoat:1 }),
   prop:   new THREE.MeshPhysicalMaterial({ color:0x1a1d22, roughness:.3, metalness:.3, clearcoat:.9, side:THREE.DoubleSide }),
   red:    new THREE.MeshPhysicalMaterial({ color:0x8c1410, roughness:.4 }),
+  orange: new THREE.MeshPhysicalMaterial({ color:0xd8551c, roughness:.55 }),
+  white:  new THREE.MeshPhysicalMaterial({ color:0xe8e2d0, roughness:.7 }),
   led:    new THREE.MeshStandardMaterial({ color:0x35c9ff, emissive:0x35c9ff, emissiveIntensity:2.5 }),
-  cyan:   new THREE.MeshPhysicalMaterial({ color:0x2fb7c9, roughness:.55 }),
+  ledr:   new THREE.MeshStandardMaterial({ color:0xff2a2a, emissive:0xff2a2a, emissiveIntensity:2.5 }),
+  cyan:   new THREE.MeshPhysicalMaterial({ color:0x2fb7c9, roughness:.6 }),
+  rubber: new THREE.MeshPhysicalMaterial({ color:0x0b0b0b, roughness:.9 }),
+  wireR:  new THREE.MeshPhysicalMaterial({ color:0xb01414, roughness:.6 }),
+  wireK:  new THREE.MeshPhysicalMaterial({ color:0x0a0a0a, roughness:.6 }),
+  pcb:    new THREE.MeshPhysicalMaterial({ color:0x0b1a10, roughness:.45 }),
 };
 const UP = new THREE.Vector3(0,1,0);
 function mesh(geo, mat, pos=[0,0,0], rot=[0,0,0], parent){ const m = new THREE.Mesh(geo, mat); m.position.set(...pos); m.rotation.set(...rot); if (parent) parent.add(m); return m; }
 const box = (p,w,h,d,m,pos,rot) => mesh(new THREE.BoxGeometry(w,h,d), m, pos, rot, p);
 const cyl = (p,r1,r2,h,m,pos,rot,seg=24) => mesh(new THREE.CylinderGeometry(r1,r2,h,seg), m, pos, rot, p);
-function strut(p, a, b, r, m=MAT.carbon){ const A=new THREE.Vector3(...a), B=new THREE.Vector3(...b); const o = new THREE.Mesh(new THREE.CylinderGeometry(r,r,A.distanceTo(B),14), m);
+function strut(p, a, b, r, m=MAT.tube, seg=16){ const A=new THREE.Vector3(...a), B=new THREE.Vector3(...b); const o = new THREE.Mesh(new THREE.CylinderGeometry(r,r,A.distanceTo(B),seg), m);
   o.position.copy(A).lerp(B,.5); o.quaternion.setFromUnitVectors(UP, B.clone().sub(A).normalize()); p.add(o); return o; }
+function wire(p, pts, r, m){ const c = new THREE.CatmullRomCurve3(pts.map(v => new THREE.Vector3(...v))); p.add(new THREE.Mesh(new THREE.TubeGeometry(c, 24, r, 6, false), m)); }
+function roundRect(w, h, r){ const s = new THREE.Shape(); s.moveTo(-w/2+r,-h/2); s.lineTo(w/2-r,-h/2); s.quadraticCurveTo(w/2,-h/2,w/2,-h/2+r); s.lineTo(w/2,h/2-r); s.quadraticCurveTo(w/2,h/2,w/2-r,h/2);
+  s.lineTo(-w/2+r,h/2); s.quadraticCurveTo(-w/2,h/2,-w/2,h/2-r); s.lineTo(-w/2,-h/2+r); s.quadraticCurveTo(-w/2,-h/2,-w/2+r,-h/2); return s; }
+function plate(p, w, d, t, mat, pos, holes=[]){ const s = roundRect(w, d, Math.min(w,d)*.12); holes.forEach(([x,y,r]) => { const h = new THREE.Path(); h.absarc(x, y, r, 0, Math.PI*2, true); s.holes.push(h); });
+  const g = new THREE.ExtrudeGeometry(s, { depth:t, bevelEnabled:false }); g.rotateX(-Math.PI/2); g.translate(0, t/2, 0); const m = new THREE.Mesh(g, mat); m.position.set(...pos); p.add(m); return m; }
+// twisted, tapered propeller blade
+function bladeGeo(len, chord, twist=.35){ const N = 14, pos = [], idx = [];
+  for (let i=0;i<=N;i++){ const u = i/N, x = u*len, c = chord*(0.35 + 1.1*Math.sin(Math.PI*Math.min(1, u*1.15+.05)))*(1-u*.3), a = twist*(1-u)+.08;
+    for (const s of [-1,1]){ const z = s*c/2, y = Math.sin(a)*z*-1; pos.push(x, y, Math.cos(a)*z); } }
+  for (let i=0;i<N;i++){ const o = i*2; idx.push(o,o+1,o+2, o+1,o+3,o+2); }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos,3)); g.setIndex(idx); g.computeVertexNormals(); return g; }
 const spinners = [];
-function rotorUnit(p, x, y, z, r, dir, { blades=2, motorR=.028, motorH=.03, coax=false, ring=true } = {}){
+function propGroup(r, blades, dir, hubR){ const spin = new THREE.Group();
+  for (let i=0;i<blades;i++){ const b = new THREE.Mesh(bladeGeo(r - hubR, r*.19), MAT.prop); b.position.x = hubR*.8; const pv = new THREE.Group(); pv.rotation.y = i*Math.PI*2/blades; pv.add(b); spin.add(pv); }
+  cyl(spin, hubR, hubR, hubR*.5, MAT.poly, [0,0,0], [0,0,0], 16); cyl(spin, hubR*.3, hubR*.3, hubR*.7, MAT.alu, [0,hubR*.3,0]);
+  spinners.push({ spin, dir }); return spin; }
+// clone a real AX4 part (motor, prop or gimbal) at a given scale
+function ax4Part(key, s=1){ const src = parts.get(key); if (!src) return new THREE.Group();
+  const c = src.mesh.clone(); c.matrixAutoUpdate = true; c.position.set(0,0,0); c.quaternion.copy(src.mesh.userData.baseQ || new THREE.Quaternion()); c.scale.setScalar(s); c.userData = {};
+  c.material = src.mesh.material.map(m => { const n = m.clone(); n.color.copy(m.userData.baseColor); n.emissive.copy(m.userData.baseEm); n.emissiveIntensity = m.userData.baseEmI; return n; }); return c; }
+function ax4Offset(a, b){ const pa = parts.get(a), pb = parts.get(b); return pa && pb ? pb.base.clone().sub(pa.base) : new THREE.Vector3(0,.05,0); }
+// coaxial or single motor unit built from the real AX4 motor + prop
+function unit(p, x, y, z, s, dir, { coax=true, led=null } = {}){
   const g = new THREE.Group(); g.position.set(x,y,z);
-  cyl(g, motorR, motorR*1.05, motorH, MAT.poly);
-  if (ring) cyl(g, motorR*1.02, motorR*1.02, motorH*.25, MAT.copper, [0,-motorH*.15,0]);
-  cyl(g, motorR*.3, motorR*.3, motorH*.5, MAT.alu, [0, motorH*.6, 0]);
-  const spin = new THREE.Group(); spin.position.y = motorH*.75;
-  for (let i=0;i<blades;i++){ const b = new THREE.Mesh(new THREE.BoxGeometry(r*2*.96, .006, r*.17), MAT.prop); b.rotation.y = i*Math.PI*2/blades; b.rotation.x = .22; b.geometry.translate(0,0,0); if (blades===3){ b.geometry.dispose(); const bb = new THREE.Mesh(new THREE.BoxGeometry(r*.96,.006,r*.2), MAT.prop); bb.position.x = r*.5; bb.rotation.x=.22; const pivot = new THREE.Group(); pivot.rotation.y = i*Math.PI*2/3; pivot.add(bb); spin.add(pivot); continue; } spin.add(b); }
-  cyl(spin, motorR*.35, motorR*.35, .01, MAT.poly);
-  g.add(spin); spinners.push({ spin, dir });
-  if (coax){ const g2 = new THREE.Group(); g2.position.y = -motorH*1.6; g2.rotation.x = Math.PI; cyl(g2, motorR, motorR*1.05, motorH, MAT.poly); if (ring) cyl(g2, motorR*1.02, motorR*1.02, motorH*.25, MAT.copper, [0,-motorH*.15,0]);
-    const s2 = new THREE.Group(); s2.position.y = motorH*.75; for (let i=0;i<blades;i++){ const b = new THREE.Mesh(new THREE.BoxGeometry(r*2*.96,.006,r*.17), MAT.prop); b.rotation.y = i*Math.PI/blades + .4; b.rotation.x = .22; s2.add(b); } g2.add(s2); g.add(g2); spinners.push({ spin:s2, dir:-dir }); }
+  const top = ax4Part('motor_2', s), tp = ax4Part('prop_2', s), off = ax4Offset('motor_2','prop_2').multiplyScalar(s);
+  top.position.y = .018*s; tp.position.copy(off).add(top.position); g.add(top, tp); spinners.push({ spin:tp, dir, ud:true, base:tp.userData.baseQ = tp.quaternion.clone() });
+  if (coax){ const bot = ax4Part('motor_0', s), bp = ax4Part('prop_0', s), off2 = ax4Offset('motor_0','prop_0').multiplyScalar(s);
+    bot.position.y = -.05*s; bp.position.copy(off2).add(bot.position); g.add(bot, bp); spinners.push({ spin:bp, dir:-dir, ud:true, base:bp.userData.baseQ = bp.quaternion.clone() }); }
+  // integrated ESC housing with cooling fins
+  box(g, .07*s, .024*s, .05*s, MAT.aludk, [0, -.012*s, 0]); for (let i=-2;i<=2;i++) box(g, .072*s, .002*s, .004*s, MAT.alu, [0, -.012*s, i*.01*s]);
+  if (led) cyl(g, .028*s, .028*s, .004*s, led, [0, -.027*s, 0]);
   p.add(g); return g;
 }
 
 function buildOctaQuad(span, { rescue=false } = {}){
-  const g = new THREE.Group(); const L = span/2, k = span/1.8;
-  // centre plates and canopy
-  box(g, .34*k, .012, .34*k, MAT.carbon, [0,0,0]);
-  box(g, .30*k, .012, .30*k, MAT.carbon, [0,.07*k,0]);
-  const can = new THREE.Mesh(new THREE.CylinderGeometry(.14*k,.17*k,.07*k,8), MAT.blue); can.position.y = .11*k; can.rotation.y = Math.PI/8; g.add(can);
-  cyl(g, .035*k,.035*k,.03*k, MAT.glass, [0,.16*k,0]);
-  [[-.1,-.1],[.1,-.1]].forEach(([x,z]) => { strut(g,[x*k,.08*k,z*k],[x*k,.28*k,z*k],.006*k,MAT.alu); cyl(g,.02*k,.02*k,.01*k,MAT.poly,[x*k,.285*k,z*k]); });
-  // four arms with coaxial pairs
+  const g = new THREE.Group(); const k = span/1.8, L = span/2, S = 1.76*k;        // S: motor/prop scale vs the AX4 (30 in vs 17 in)
+  // centre: twin carbon plates, standoffs, faceted blue canopy, sensors
+  plate(g, .40*k, .40*k, .006*k, MAT.carbon, [0,0,0], [[.12*k,.12*k,.02*k],[-.12*k,.12*k,.02*k],[.12*k,-.12*k,.02*k],[-.12*k,-.12*k,.02*k]]);
+  plate(g, .36*k, .36*k, .006*k, MAT.carbon, [0,.08*k,0]);
+  [[.14,.14],[-.14,.14],[.14,-.14],[-.14,-.14]].forEach(([x,z]) => cyl(g, .006*k,.006*k,.08*k, MAT.alu, [x*k,.04*k,z*k]));
+  const canopy = new THREE.Mesh(new THREE.LatheGeometry([[0,.13],[.08,.125],[.13,.09],[.16,.04],[.165,0]].map(([r,y]) => new THREE.Vector2(r*k, y*k)), 8), MAT.blue); canopy.position.y = .083*k; canopy.rotation.y = Math.PI/8; g.add(canopy);
+  box(g, .09*k, .035*k, .05*k, MAT.glass, [0, .12*k, -.12*k], [.5,0,0]);                 // nose glass
+  cyl(g, .035*k,.035*k,.012*k, MAT.poly, [0,.22*k,.02*k]); cyl(g, .03*k,.03*k,.004*k, MAT.white, [0,.23*k,.02*k]);   // GNSS puck
+  [[-.11,.1],[.11,.1]].forEach(([x,z]) => { strut(g,[x*k,.09*k,z*k],[x*k,.3*k,z*k],.005*k,MAT.aludk); cyl(g,.014*k,.014*k,.06*k,MAT.white,[x*k,.33*k,z*k]); }); // RTK helix antennas
+  box(g, .12*k, .02*k, .06*k, MAT.aludk, [0,.09*k,.13*k]); for (let i=-3;i<=3;i++) box(g, .002*k,.02*k,.06*k, MAT.alu, [i*.015*k,.09*k,.13*k]);   // datalink heatsink
+  // four folding arms with root clamps and tip mounts
   const a = [[1,-1],[-1,-1],[-1,1],[1,1]];
-  a.forEach(([sx,sz],i) => { const x = sx*L*Math.SQRT1_2, z = sz*L*Math.SQRT1_2;
-    strut(g, [sx*.14*k, .035*k, sz*.14*k], [x, .035*k, z], .013*k);
-    cyl(g,.022*k,.022*k,.05*k,MAT.poly,[sx*.16*k,.035*k,sz*.16*k],[0,0,0]);
-    rotorUnit(g, x, .06*k, z, .381*k, i%2?1:-1, { motorR:.05*k, motorH:.05*k, coax:true });
-    cyl(g,.012*k,.012*k,.006*k,MAT.led,[x,.025*k,z]); });
-  // landing legs
-  [-1,1].forEach(s => { strut(g,[s*.12*k,0,-.1*k],[s*.26*k,-.42*k,-.16*k],.01*k); strut(g,[s*.12*k,0,.1*k],[s*.26*k,-.42*k,.16*k],.01*k); strut(g,[s*.26*k,-.42*k,-.3*k],[s*.26*k,-.42*k,.3*k],.011*k); });
+  a.forEach(([sx,sz],i) => { const x = sx*L*Math.SQRT1_2, z = sz*L*Math.SQRT1_2, ux = sx*Math.SQRT1_2, uz = sz*Math.SQRT1_2;
+    const r0 = .19*k, r1 = .26*k;
+    box(g, .07*k, .05*k, .05*k, MAT.aludk, [ux*r0*.95, .04*k, uz*r0*.95], [0, Math.atan2(ux, uz), 0]);                 // root clamp
+    cyl(g, .022*k,.022*k,.012*k, MAT.anod, [ux*r1, .04*k, uz*r1], [Math.PI/2*ux, 0, Math.PI/2*uz]);                   // hinge pin cap
+    strut(g, [ux*r0, .04*k, uz*r0], [x, .04*k, z], .015*k);                                                           // 30 mm carbon tube
+    box(g, .06*k, .04*k, .06*k, MAT.aludk, [x, .04*k, z], [0, Math.atan2(ux, uz), 0]);                               // tip mount
+    unit(g, x, .085*k, z, S, i%2?1:-1, { led: i>=2 ? MAT.ledr : MAT.led }); });
+  // landing gear: two inverted-V carbon legs on T-skids
+  [-1,1].forEach(s => { const y0 = -.01*k, x0 = s*.16*k, x1 = s*.34*k, yb = -.5*k;
+    strut(g,[x0,y0,-.12*k],[x1,yb,-.2*k],.011*k); strut(g,[x0,y0,.12*k],[x1,yb,.2*k],.011*k); strut(g,[x1,yb+.14*k,-.17*k],[x1,yb+.14*k,.17*k],.008*k);
+    strut(g,[x1,yb,-.38*k],[x1,yb,.38*k],.012*k); [-.38,.38].forEach(e => cyl(g,.015*k,.015*k,.05*k,MAT.rubber,[x1,yb,e*k],[Math.PI/2,0,0]));
+    cyl(g,.018*k,.018*k,.03*k,MAT.poly,[x1,yb,-.2*k]); cyl(g,.018*k,.018*k,.03*k,MAT.poly,[x1,yb,.2*k]); });
+  // belly gimbal from the AX4
+  const gim = ax4Part('gimbal', 1.25*k); gim.position.set(0, -.14*k, -.14*k); g.add(gim);
   // payload module
-  if (!rescue){ const tank = cyl(g,.09*k,.09*k,.34*k,MAT.blue,[0,-.2*k,0],[0,0,Math.PI/2]); tank.rotation.z = 0; tank.rotation.x = Math.PI/2;
-    cyl(g,.014*k,.014*k,.06*k,MAT.alu,[0,-.2*k,-.21*k],[Math.PI/2,0,0]); cyl(g,.02*k,.028*k,.05*k,MAT.poly,[0,-.2*k,-.26*k],[Math.PI/2,0,0]); box(g,.2*k,.03*k,.08*k,MAT.poly,[0,-.09*k,0]); }
-  else { box(g,.42*k,.025*k,.12*k,MAT.poly,[0,-.12*k,0]); for (let i=0;i<4;i++){ const ring = new THREE.Mesh(new THREE.TorusGeometry(.07*k,.018*k,10,28), i%2?MAT.red:new THREE.MeshPhysicalMaterial({color:0xe8e2d0,roughness:.7})); ring.position.set((i-1.5)*.1*k,-.19*k,0); ring.rotation.y = Math.PI/2; g.add(ring); } }
+  if (!rescue){
+    const tank = cyl(g, .1*k,.1*k,.42*k, MAT.blue, [0,-.19*k,.04*k], [Math.PI/2,0,0], 32); [-.21,.21].forEach(e => cyl(g,.1*k,.1*k,.02*k,MAT.alu,[0,-.19*k,(e+.04)*k],[Math.PI/2,0,0],32));
+    [-.12,.12].forEach(z => mesh(new THREE.TorusGeometry(.102*k,.006*k,8,40), MAT.poly, [0,-.19*k,(z+.04)*k], [0,0,0], g));   // straps
+    box(g, .12*k, .06*k, .09*k, MAT.aludk, [0,-.06*k,.17*k]); cyl(g,.012*k,.012*k,.08*k,MAT.poly,[0,-.06*k,.12*k],[Math.PI/2,0,0]);  // pump
+    strut(g,[0,-.19*k,-.17*k],[0,-.15*k,-.42*k],.01*k,MAT.alu); cyl(g,.012*k,.02*k,.05*k,MAT.copper,[0,-.146*k,-.44*k],[Math.PI/2,0,0]);  // nozzle boom
+  } else {
+    plate(g, .5*k, .14*k, .008*k, MAT.carbon, [0,-.1*k,.02*k]); [[-.2,.02],[.2,.02]].forEach(([x,z]) => strut(g,[x*k,-.1*k,z*k],[x*k,0,z*k],.006*k,MAT.alu));
+    for (let i=0;i<6;i++){ const ring = new THREE.Mesh(new THREE.TorusGeometry(.065*k,.013*k,12,32), i%2?MAT.white:MAT.orange); ring.position.set((i-2.5)*.085*k,-.19*k,.02*k); ring.rotation.y = Math.PI/2; g.add(ring); }
+    box(g, .1*k, .05*k, .2*k, MAT.orange, [-.3*k,-.14*k,.02*k]); box(g, .1*k, .05*k, .2*k, MAT.orange, [.3*k,-.14*k,.02*k]);   // vest bundles
+  }
   return g;
 }
 
 function buildFX7(){
-  const g = new THREE.Group(); const w = .15, s = .106;
-  box(g,.17,.003,.07,MAT.carbon,[0,0,0]); box(g,.15,.003,.06,MAT.carbon,[0,.028,0]);
-  [[-.06,-.02],[.06,-.02],[-.06,.02],[.06,.02]].forEach(([x,z]) => cyl(g,.003,.003,.028,MAT.alu,[x,.014,z]));
-  box(g,.04,.02,.035,MAT.poly,[0,.012,0]); box(g,.03,.012,.03,MAT.poly,[0,.012,-.015]);
-  [[1,-1],[-1,-1],[-1,1],[1,1]].forEach(([sx,sz],i) => { const arm = new THREE.Mesh(new THREE.BoxGeometry(.17,.005,.016),MAT.carbon); arm.position.set(sx*s/2,-.004,sz*s/2); arm.rotation.y = Math.atan2(-sz*s, sx*s); g.add(arm);
-    rotorUnit(g, sx*s, .004, sz*s, .089, i%2?1:-1, { blades:3, motorR:.014, motorH:.016, ring:false }); });
+  const g = new THREE.Group(); const s = .106;
+  // frame: bottom plate, top plate, flat arms with slots, standoffs
+  plate(g, .13, .05, .003, MAT.carbon, [0,-.004,0], [[0,0,.008],[.045,0,.006],[-.045,0,.006]]);
+  plate(g, .11, .044, .003, MAT.carbon, [0,.028,0], [[.035,0,.005],[-.035,0,.005]]);
+  [[-.045,-.016],[.045,-.016],[-.045,.016],[.045,.016]].forEach(([x,z]) => cyl(g,.0025,.0025,.03,MAT.alu,[x,.012,z],[0,0,0],8));
+  [[1,-1],[-1,-1],[-1,1],[1,1]].forEach(([sx,sz],i) => {
+    const arm = plate(g, .175, .018, .005, MAT.carbon, [sx*s*.55,-.009,sz*s*.55], [[.03,0,.004],[.06,0,.004]]); arm.rotation.y = Math.atan2(-sz, sx);
+    const m = ax4Part('motor_2', .5); m.position.set(sx*s, .006, sz*s); g.add(m);
+    const pr = propGroup(.089, 3, i%2?1:-1, .007); pr.position.set(sx*s, .02, sz*s); g.add(pr); });
+  // flight stack with capacitor and wiring loom
+  box(g, .036, .006, .036, MAT.pcb, [0,.004,0]); box(g, .03, .005, .03, MAT.pcb, [0,.014,0]); box(g, .036, .002, .036, MAT.pcb, [0,.022,0]);
+  cyl(g, .005,.005,.012, MAT.poly, [-.028,.006,.016], [Math.PI/2,0,0]);
+  wire(g, [[-.02,.005,0],[-.05,.008,-.03],[-.09,.004,-.08],[-.102,.004,-.1]], .0013, MAT.wireR); wire(g, [[-.02,.007,.004],[-.05,.01,-.026],[-.09,.006,-.077],[-.102,.006,-.1]], .0013, MAT.wireK);
+  wire(g, [[.02,.005,0],[.05,.008,.03],[.09,.004,.08],[.102,.004,.1]], .0013, MAT.wireR); wire(g, [[.02,.007,-.004],[.05,.01,.026],[.09,.006,.077],[.102,.006,.1]], .0013, MAT.wireK);
+  wire(g, [[.018,.005,-.002],[.05,.008,-.03],[.09,.004,-.08],[.102,.004,-.1]], .0013, MAT.wireR); wire(g, [[-.018,.005,.002],[-.05,.008,.03],[-.09,.004,.08],[-.102,.004,.1]], .0013, MAT.wireK);
   // 6S pack on top with strap
-  box(g,.075,.032,.04,MAT.poly,[0,.048,.005]); box(g,.08,.006,.012,MAT.red,[0,.05,.005]);
-  // payload release module (cyan print) under the belly
-  box(g,.05,.03,.06,MAT.cyan,[0,-.02,.01]); cyl(g,.016,.016,.03,MAT.cyan,[0,-.045,.01],[Math.PI/2,0,0]); box(g,.04,.012,.03,MAT.poly,[0,-.062,.012]);
-  // nose camera cage + antennas
-  box(g,.03,.024,.012,MAT.poly,[0,.012,-.045]); cyl(g,.006,.006,.005,MAT.glass,[0,.012,-.052],[Math.PI/2,0,0]);
-  strut(g,[-.02,.03,.03],[-.04,.1,.06],.002,MAT.poly); strut(g,[.02,.03,.03],[.04,.1,.06],.002,MAT.poly);
-  cyl(g,.004,.004,.004,MAT.led,[0,.03,.03]);
+  box(g, .078, .034, .042, MAT.poly, [0,.05,.006]); box(g, .076, .03, .04, new THREE.MeshPhysicalMaterial({ color:0x18224a, roughness:.5 }), [0,.05,.006]);
+  box(g, .082, .012, .014, MAT.red, [0,.05,.006]); cyl(g, .005,.005,.012, MAT.orange, [.044,.045,.006], [0,0,Math.PI/2]);   // XT90
+  // nose camera in a tilt cage, VTX + RX antennas
+  box(g, .004, .028, .022, MAT.carbon, [-.016,.012,-.05]); box(g, .004, .028, .022, MAT.carbon, [.016,.012,-.05]);
+  box(g, .024, .022, .012, MAT.poly, [0,.012,-.052], [-.35,0,0]); cyl(g, .007,.007,.006, MAT.glass, [0,.016,-.06], [Math.PI/2-.35,0,0], 16);
+  cyl(g, .004,.004,.016, MAT.poly, [0,.03,.035]); cyl(g, .003,.003,.05, MAT.white, [0,.062,.035]);                     // VTX antenna
+  strut(g,[-.015,.028,.03],[-.045,.1,.07],.0015,MAT.poly); strut(g,[.015,.028,.03],[.045,.1,.07],.0015,MAT.poly);        // RX dipoles
+  cyl(g, .004,.004,.004, MAT.led, [0,.03,.026]);
+  // printed release module under the belly: rounded body, servo, horn and hook
+  const body = new THREE.Mesh(new THREE.ExtrudeGeometry(roundRect(.042,.05,.01), { depth:.02, bevelEnabled:true, bevelThickness:.002, bevelSize:.002, bevelSegments:3 }), MAT.cyan); body.rotation.x = Math.PI/2; body.position.set(0,-.008,.01); g.add(body);
+  cyl(g, .013,.013,.022, MAT.cyan, [0,-.034,.01], [Math.PI/2,0,0], 24);
+  box(g, .02, .011, .022, new THREE.MeshPhysicalMaterial({ color:0x2b4fd8, roughness:.5 }), [.017,-.024,.012]); cyl(g,.002,.002,.01,MAT.white,[.028,-.024,.012],[0,0,Math.PI/2]);   // servo + horn
+  strut(g,[0,-.046,.01],[0,-.06,.0],.0015,MAT.alu); strut(g,[0,-.06,0],[0,-.055,-.01],.0015,MAT.alu);                   // hook
   return g;
 }
 
@@ -780,7 +847,7 @@ function showFleet(key){
   if (key === 'ax4') { m = ax4Model; }
   else { if (!fleetModels[key]) fleetModels[key] = key==='x8' ? buildOctaQuad(1.8) : key==='x9' ? buildOctaQuad(2.6, { rescue:true }) : buildFX7(); m = fleetModels[key]; }
   if (key !== 'ax4'){ if (!m.userData.centered){ const bb = new THREE.Box3().setFromObject(m); const c = bb.getCenter(new THREE.Vector3()); m.position.sub(c); m.userData.centered = true; } fleetRoot.add(m); }
-  fleetState.key = key; fleetState.fit = key==='ax4' ? 1.2 : key==='fx7' ? 2.6 : .78/(FLEET[key].span/1.8);
+  fleetState.key = key; fleetState.fit = key==='ax4' ? 1.2 : key==='fx7' ? 3.0 : .78/(FLEET[key].span/1.8);
 }
 
 /* ============================================================
@@ -888,11 +955,11 @@ function frame(){
   const dt = Math.min(clock.getDelta(), .05), t = clock.elapsedTime;
   const m = isMobile(); const mode = st.mode;
   const hw = Math.tan(camera.fov*Math.PI/360)*camera.position.z*camera.aspect;   // visible half-width at the model
-  const fit = Math.min(1, hw/1.75);                                                // shrink on narrow or square viewports
+  const fit = Math.min(1, hw/1.45);                                                // shrink on narrow or square viewports
 
   // stage targets
-  if (mode === 'hero'){ tgt.pos.set(m ? 0 : hw*.38, m ? .38 : -.04, 0); tgt.scale = (m ? 1.1 : 1.42)*fit; tgt.rot = Math.PI - .55 + (reduced ? 0 : Math.sin(t*.18)*.25); }
-  else if (mode === 'teardown'){ tgt.pos.set(m ? 0 : hw*.36, m ? .32 : .02, 0); tgt.scale = (m ? .9 : 1.18)*fit; tgt.rot = Math.PI - .4 + st.tdP*1.6; }
+  if (mode === 'hero'){ tgt.pos.set(m ? 0 : hw*.38, m ? .38 : -.04, 0); tgt.scale = (m ? 1.1 : 1.5)*fit; tgt.rot = Math.PI - .55 + (reduced ? 0 : Math.sin(t*.18)*.25); }
+  else if (mode === 'teardown'){ tgt.pos.set(m ? 0 : hw*.36, m ? .32 : .02, 0); tgt.scale = (m ? .95 : 1.42)*fit; tgt.rot = Math.PI - .4 + st.tdP*1.6; }
   else { tgt.pos.set(m ? 0 : hw*.42, m ? .35 : .02, 0); tgt.scale = (m ? .95 : 1.3)*fit; tgt.rot = Math.PI - .4 + 1.6; }
   const kp = 1 - Math.exp(-dt*4.5);
   cur.pos.lerp(tgt.pos, kp); cur.scale += (tgt.scale - cur.scale)*kp; cur.rot += (tgt.rot - cur.rot)*kp;
@@ -942,9 +1009,10 @@ function frame(){
   });
 
   // props and HUD
-  const rpm = mode === 'hero' ? 3200 : mode === 'teardown' ? 3200*(1 - st.explode*.9) : 2600;
-  const spin = reduced ? 2 : rpm/60*2*Math.PI*.012;      // visual rate, not real
-  for (const s of spinners){ if (s.ud) s.spin.userData.spin += dt*spin*s.dir*(s.rate||1); else s.spin.rotation.y += dt*spin*s.dir*(s.rate||1); }
+  const foldStop = Math.max(0, 1 - st.fold*2.2);                          // rotors spin down as soon as the fold starts
+  const rpm = (mode === 'hero' ? 3200 : mode === 'teardown' ? 3200*(1 - st.explode*.9) : 2600) * foldStop;
+  const spin = (reduced ? 2 : rpm/60*2*Math.PI*.012);      // visual rate, not real
+  for (const s of spinners){ if (s.base){ s.ang = (s.ang||0) + dt*spin*s.dir; s.spin.quaternion.setFromAxisAngle(UP, s.ang).multiply(s.base); } else if (s.ud) s.spin.userData.spin += dt*spin*s.dir*(s.rate||1); else s.spin.rotation.y += dt*spin*s.dir*(s.rate||1); }
   if (mode === 'hero' && Math.floor(t*4) % 1 === 0) $('hud-rpm').textContent = String(Math.round(rpm + Math.sin(t*3)*40)).padStart(4,'0');
 
   // leader line from the hovered part to the card
