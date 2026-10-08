@@ -73,6 +73,18 @@
   .start p{margin-top:10px;color:var(--text)}
   .start .alt{margin-top:18px;font-size:14px;color:var(--muted)}
   .note{margin-top:28px;font-size:14px;color:var(--muted)}
+
+  .start form{margin-top:18px;display:grid;gap:14px}
+  .start label{display:grid;gap:6px;font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+  .start input{font:inherit;font-family:var(--body);font-size:16px;letter-spacing:0;text-transform:none;color:var(--text);background:var(--bg);
+    border:1px solid var(--line-strong);border-radius:3px;padding:12px 14px;width:100%}
+  .start input:focus{outline:none;border-color:var(--accent)}
+  .start button{font:inherit;cursor:pointer;justify-self:start;background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+  .start button:hover{background:#ffb64f;color:var(--accent-ink)}
+  .start button[disabled]{opacity:.6;cursor:wait}
+  .start .msg{margin-top:14px;font-size:15px;color:#ff9c8a}
+  .start .msg:empty{display:none}
+  [hidden]{display:none !important}
 </style>
 </head>
 <body>
@@ -109,31 +121,123 @@
   <div class="card">
     <h2>How it works</h2>
     <ol>
-      <li>Press the <b>Start interview</b> button at the bottom right of this page.</li>
-      <li>Tell the interviewer your name, college, branch and year. <span>Then give a phone number or email.</span></li>
+      <li>Fill in your name, email and mobile number in the form below. <span>Each candidate can take the interview only once.</span></li>
+      <li>Press the <b>Start interview</b> button that appears at the bottom right of this page.</li>
+      <li>Tell the interviewer your name, college, branch and year.</li>
       <li>Answer about ten questions. <span>You may answer in English, Hindi or Gujarati.</span></li>
       <li>If you have no experience in an area, say so honestly. <span>That is normal for an intern.</span></li>
       <li>The interviewer ends the call when it is finished. <span>You can then close this page.</span></li>
     </ol>
   </div>
 
-  <div class="start">
-    <h2>Ready?</h2>
-    <p>Press <b>Start interview</b> at the bottom right corner of the screen.</p>
-    <p class="alt">Button not showing? <a class="btn" href="https://elevenlabs.io/app/talk-to?agent_id=agent_0401m4b1r24zfq08sc48w01vy9yc" target="_blank" rel="noopener">Open the interview in a new tab</a></p>
+  <div class="start" id="start">
+    <div id="step-form">
+      <h2>Your details</h2>
+      <p>Enter your details to unlock the interview. You get <b>one attempt</b>, so start only when you are ready.</p>
+      <form id="reg" novalidate>
+        <label>Full name
+          <input id="f-name" name="name" type="text" autocomplete="name" maxlength="80" required>
+        </label>
+        <label>Email
+          <input id="f-email" name="email" type="email" autocomplete="email" maxlength="120" required>
+        </label>
+        <label>Mobile number
+          <input id="f-phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" maxlength="16" placeholder="10-digit mobile number" required>
+        </label>
+        <button class="btn" id="reg-btn" type="submit">Unlock interview</button>
+      </form>
+      <p class="msg" id="reg-msg" role="alert"></p>
+    </div>
+
+    <div id="step-ready" hidden>
+      <h2>Ready?</h2>
+      <p>Press <b>Start interview</b> at the bottom right corner of the screen. Once the call starts, your one attempt is used, so do not close or reload this page until the interviewer ends the call.</p>
+    </div>
+
+    <div id="step-done" hidden>
+      <h2>Interview already taken</h2>
+      <p>Our records show this interview has already been taken. Each candidate gets one attempt. If your call failed because of a technical problem, please <a href="/#contact" style="color:var(--accent);text-decoration:underline">contact the Vayuveer team</a>.</p>
+    </div>
   </div>
 
-  <p class="note">The interview is recorded and transcribed so the Vayuveer team can review it. The recording is used only for internship selection. Our team will contact you with the result.</p>
+  <p class="note">The interview is recorded and transcribed so the Vayuveer team can review it. Your name, email, mobile number and the recording are stored and used only for internship selection. Our team will contact you with the result.</p>
 </main>
 
-<elevenlabs-convai
-  agent-id="agent_0401m4b1r24zfq08sc48w01vy9yc"
-  action-text="Start interview"
-  start-call-text="Start interview"
-  end-call-text="End interview"
-  listening-text="Listening"
-  speaking-text="Interviewer speaking"></elevenlabs-convai>
-<script src="https://unpkg.com/@elevenlabs/convai-widget-embed" async type="text/javascript"></script>
+<script>
+(function(){
+  var AGENT_ID = 'agent_0401m4b1r24zfq08sc48w01vy9yc';
+  var API = 'https://xnwvugaooyiqwhjbkmha.supabase.co/rest/v1/rpc/';
+  var KEY = 'sb_publishable_xagILc_nNJo5iU89jIJDyQ_T4LIyhVt';
+  var DONE_KEY = 'vv_interview_done';
+
+  var $ = function(id){ return document.getElementById(id); };
+  var token = null;
+
+  function show(step){
+    ['step-form','step-ready','step-done'].forEach(function(id){ $(id).hidden = (id !== step); });
+  }
+  function isDone(){ try { return localStorage.getItem(DONE_KEY) === '1'; } catch(e){ return false; } }
+  function setDone(){ try { localStorage.setItem(DONE_KEY, '1'); } catch(e){} }
+
+  function rpc(name, body, keepalive){
+    return fetch(API + name, {
+      method: 'POST',
+      headers: { 'apikey': KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      keepalive: !!keepalive
+    });
+  }
+
+  function mountWidget(vars){
+    var el = document.createElement('elevenlabs-convai');
+    el.setAttribute('agent-id', AGENT_ID);
+    el.setAttribute('dynamic-variables', JSON.stringify(vars));
+    document.body.appendChild(el);
+    var sc = document.createElement('script');
+    sc.src = 'https://unpkg.com/@elevenlabs/convai-widget-embed';
+    sc.async = true;
+    document.body.appendChild(sc);
+  }
+
+  // The attempt is used the moment the call actually starts.
+  document.addEventListener('elevenlabs-convai:call', function(){
+    setDone();
+    if (token) rpc('mark_interview_started', { p_token: token }, true).catch(function(){});
+  });
+
+  var MESSAGES = {
+    invalid_name: 'Please enter your full name.',
+    invalid_email: 'Please enter a valid email address.',
+    invalid_phone: 'Please enter a valid 10-digit Indian mobile number.'
+  };
+
+  $('reg').addEventListener('submit', function(ev){
+    ev.preventDefault();
+    var name = $('f-name').value.trim(), email = $('f-email').value.trim(), phone = $('f-phone').value.trim();
+    var msg = $('reg-msg'), btn = $('reg-btn');
+    msg.textContent = '';
+    if (!name || !email || !phone){ msg.textContent = 'Please fill in all three fields.'; return; }
+    btn.disabled = true;
+    rpc('register_interview', { p_name: name, p_email: email, p_phone: phone })
+      .then(function(r){ if (!r.ok) throw new Error('http ' + r.status); return r.json(); })
+      .then(function(d){
+        if (d.allowed){
+          token = d.token;
+          mountWidget({ candidate_name: name, candidate_email: email, candidate_phone: phone });
+          show('step-ready');
+        } else if (d.reason === 'already_taken'){
+          show('step-done');
+        } else {
+          msg.textContent = MESSAGES[d.reason] || 'Please check your details and try again.';
+        }
+      })
+      .catch(function(){ msg.textContent = 'Could not reach the server. Check your internet connection and try again.'; })
+      .then(function(){ btn.disabled = false; });
+  });
+
+  if (isDone()) show('step-done');
+})();
+</script>
 
 </body>
 </html>
