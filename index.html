@@ -133,8 +133,8 @@
   .tdhead b{color:var(--blue-hi);font-weight:500}
   .bar{position:absolute;left:var(--gutter);right:var(--gutter);top:108px;height:1px;background:var(--line-strong)}
   .bar i{position:absolute;left:0;top:-1px;height:3px;width:0;background:var(--blue-hi);box-shadow:0 0 10px var(--blue-hi);transition:width .15s linear}
-  .steps{display:flex;flex-direction:column;gap:6px;max-height:calc(100svh - 150px);overflow:hidden}
-  .step{padding:12px 14px;border:1px solid transparent;border-left:2px solid var(--line-strong);transition:all .35s;cursor:pointer;opacity:.5}
+  .steps{display:flex;flex-direction:column;gap:4px;max-height:calc(100svh - 150px);overflow:hidden}
+  .step{padding:9px 14px;border:1px solid transparent;border-left:2px solid var(--line-strong);transition:all .35s;cursor:pointer;opacity:.5}
   .step.on{opacity:1;border-color:var(--line);border-left-color:var(--blue-hi);background:rgba(19,24,33,.6)}
   .step .n{font-family:var(--mono);font-size:10px;letter-spacing:.16em;color:var(--blue-hi);text-transform:uppercase}
   .step h3{font-size:26px;font-weight:700;text-transform:uppercase;margin:4px 0 4px;letter-spacing:.02em}
@@ -323,42 +323,47 @@
 
   <section class="teardown" id="teardown" aria-label="AX4 teardown">
     <div class="sticky">
-      <div class="tdhead"><span>AX4 teardown · <b id="tdstep">01</b> / 06</span><span id="tdpct">Exploded <b>0%</b></span></div>
+      <div class="tdhead"><span>AX4 teardown · <b id="tdstep">01</b> / 07</span><span id="tdpct">Exploded <b>0%</b></span></div>
       <div class="bar"><i id="tdbar"></i></div>
       <div class="steps" id="steps">
-        <div class="step on" data-parts="canopy,hull,gps,cooling">
-          <span class="n">01 · Shell</span><h3>Moulded fuselage</h3>
+        <div class="step on" data-parts="arm_0,arm_1,arm_2,arm_3">
+          <span class="n">01 · Transport</span><h3>Inward fold</h3>
+          <p>The front arms sweep back along the body, then the rear pair tucks forward underneath. Folded, the aircraft is 510 × 350 × 380 mm with the props and camera off, small enough for a backpack case.</p>
+          <div class="chips"><span class="chip" data-part="arm_0">Front arm</span><span class="chip" data-part="arm_2">Rear arm</span></div>
+        </div>
+        <div class="step" data-parts="canopy,hull,gps,cooling">
+          <span class="n">02 · Shell</span><h3>Moulded fuselage</h3>
           <p>A faceted polymer fuselage, 270 × 150 × 96 mm, with a 45° black-glass nose, side light bars and a fan-ducted bay that keeps the battery and avionics cool at 36 °C.</p>
           <div class="chips"><span class="chip" data-part="canopy">Canopy</span><span class="chip" data-part="hull">Lower hull</span><span class="chip" data-part="gps">RTK GNSS</span><span class="chip" data-part="cooling">Cooling fan</span></div>
         </div>
         <div class="step" data-parts="lidar,gimbal,rangefinder">
-          <span class="n">02 · Sensors</span><h3>LiDAR, gimbal, altimeter</h3>
+          <span class="n">03 · Sensors</span><h3>LiDAR, gimbal, altimeter</h3>
           <p>The 360° LiDAR is built into the nose at 45° so it sweeps from the horizon to the ground ahead. Below it, a quick-release 3-axis gimbal carries a 4K camera and a 640 × 512 thermal core.</p>
           <div class="chips"><span class="chip" data-part="lidar">360° LiDAR</span><span class="chip" data-part="gimbal">EO/IR gimbal</span><span class="chip" data-part="rangefinder">Laser altimeter</span></div>
         </div>
         <div class="step" data-parts="prop_0,prop_1,prop_2,prop_3,motor_0,motor_1,motor_2,motor_3,arm_0,arm_1,arm_2,arm_3">
-          <span class="n">03 · Propulsion</span><h3>Folding carbon arms</h3>
+          <span class="n">04 · Propulsion</span><h3>Folding carbon arms</h3>
           <p>Four 20 mm carbon tubes fold inward for transport. 5008-class motors turn 17-inch one-piece carbon props: the front pair inverted, the rear pair upright with LED orientation rings.</p>
           <div class="chips"><span class="chip" data-part="arm_0">Arm</span><span class="chip" data-part="motor_0">Motor</span><span class="chip" data-part="prop_0">Propeller</span><span class="chip" data-part="motor_2">LED ring</span></div>
         </div>
         <div class="step" data-parts="battery">
-          <span class="n">04 · Power</span><h3>Tail-loading cartridge</h3>
+          <span class="n">05 · Power</span><h3>Tail-loading cartridge</h3>
           <p>A 6S 16 Ah solid-state pack, 355 Wh and 1.49 kg, slides in from the tail and latches without tools. Its outer skin is part of the fuselage, so nothing hangs off the aircraft.</p>
           <div class="chips"><span class="chip" data-part="battery">Battery cartridge</span></div>
         </div>
         <div class="step" data-parts="autopilot,esc,datalink,deck">
-          <span class="n">05 · Avionics</span><h3>One deck, everything on it</h3>
+          <span class="n">06 · Avionics</span><h3>One deck, everything on it</h3>
           <p>The autopilot, 4-in-1 ESC and the digital link's air unit share one deck inside the fuselage. The link carries RC and video for kilometres, and fails over to 5G cellular on its own.</p>
           <div class="chips"><span class="chip" data-part="autopilot">Autopilot</span><span class="chip" data-part="esc">4-in-1 ESC</span><span class="chip" data-part="datalink">Datalink</span><span class="chip" data-part="deck">Avionics deck</span></div>
         </div>
         <div class="step" data-parts="gear">
-          <span class="n">06 · Ground</span><h3>Fixed carbon gear</h3>
+          <span class="n">07 · Ground</span><h3>Fixed carbon gear</h3>
           <p>Straight 16 mm carbon legs on 10 mm skids. No folding mechanism to fail, and enough ground clearance for the gimbal to look straight down on landing.</p>
           <div class="chips"><span class="chip" data-part="gear">Landing gear</span></div>
         </div>
       </div>
       <div aria-hidden="true"></div>
-      <div class="tdhint"><b>Hover</b> a part for its spec · <b>Drag</b> to rotate · <b>Click</b> to pin · <b>Fold</b> with the button</div>
+      <div class="tdhint"><b>Hover</b> a part for its spec · <b>Drag</b> to rotate · <b>Click</b> to pin</div>
     </div>
   </section>
 
@@ -744,12 +749,12 @@ function setupAX4(root){
     const base = o.position.clone(); let dir;
     if (info.dir === 'radial'){ dir = new THREE.Vector3(base.x - modelCenter.x, 0, base.z - modelCenter.z).normalize(); dir.y = info.up || 0; dir.normalize(); }
     else dir = new THREE.Vector3(...info.dir).normalize();
-    o.userData.key = key; const ai = /^(arm|motor|prop)_(\d)$/.exec(key); if (ai){ o.userData.arm = +ai[2]; o.matrixAutoUpdate = false; }
+    o.userData.key = key; const ai = /^(arm|motor|prop)_(\d)$/.exec(key); if (ai){ o.userData.arm = +ai[2]; o.userData.baseQ = o.quaternion.clone(); o.userData.spin = 0; o.matrixAutoUpdate = false; }
     o.material.forEach(m => { m.userData.baseColor = m.color.clone(); m.userData.baseEm = m.emissive.clone(); m.userData.baseEmI = m.emissiveIntensity; });
     parts.set(key, { mesh:o, base, dir, dist:info.dist*2.1, win:info.win, info, k:0, lit:0 });
     partMeshes.push(o); });
   // props spin around their own Y (origin was set on the motor axis at export)
-  [0,1,2,3].forEach(i => { const p = parts.get('prop_'+i); if (p) spinners.push({ spin:p.mesh, dir: i%2 ? 1 : -1, rate:1 }); });
+  [0,1,2,3].forEach(i => { const p = parts.get('prop_'+i); if (p) spinners.push({ spin:p.mesh, dir: i%2 ? 1 : -1, rate:1, ud:true }); });
 }
 
 async function loadAX4(){
@@ -762,7 +767,7 @@ async function loadAX4(){
 // convert the Blender-space hinge deltas to glTF space once: M' = C M C^-1 with C: (x,y,z) -> (x,z,-y)
 const C = new THREE.Matrix4().set(1,0,0,0, 0,0,1,0, 0,-1,0,0, 0,0,0,1), Ci = C.clone().transpose();
 const FOLDM = FOLD.map(row => row.map(a => { const M = new THREE.Matrix4().set(a[0],a[1],a[2],a[3], a[4],a[5],a[6],a[7], a[8],a[9],a[10],a[11], 0,0,0,1); return C.clone().multiply(M).multiply(Ci); }));
-const foldD = new THREE.Matrix4(), foldA = new THREE.Matrix4(), foldB = new THREE.Matrix4(), tmpT = new THREE.Matrix4(), tmpR = new THREE.Matrix4();
+const tmpQ = new THREE.Matrix4(), foldD = new THREE.Matrix4(), foldA = new THREE.Matrix4(), foldB = new THREE.Matrix4(), tmpT = new THREE.Matrix4(), tmpR = new THREE.Matrix4();
 function hingeDelta(arm, f, out){ const x = Math.min(1, Math.max(0, f)) * (FOLDM.length - 1), i = Math.floor(x), k = x - i;
   const A = FOLDM[i][arm], B = FOLDM[Math.min(i+1, FOLDM.length-1)][arm];
   for (let n=0;n<16;n++) out.elements[n] = A.elements[n] + (B.elements[n] - A.elements[n])*k; return out; }
@@ -789,8 +794,8 @@ const isMobile = () => innerWidth < 980;
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const fleetState = { key:'ax4', fit:1.35, on:0 };
 const st = { fold:0, foldT:0, tdP:0, heroP:0, fleetP:0, mode:'hero', drag:0, dragV:0, dragging:false, px:0, hover:null, pinned:null, mx:0, my:0, tmx:0, tmy:0, explode:0 };
-const cur = { pos:new THREE.Vector3(.44,-.04,0), rot:-.6, scale:1.42, fscale:0 };
-const tgt = { pos:new THREE.Vector3(.44,-.04,0), rot:-.6, scale:1.42 };
+const cur = { pos:new THREE.Vector3(.44,-.04,0), rot:Math.PI-.55, scale:1.42, fscale:0 };
+const tgt = { pos:new THREE.Vector3(.44,-.04,0), rot:Math.PI-.55, scale:1.42 };
 const ss = (t) => { t = Math.min(1, Math.max(0, t)); return t*t*(3-2*t); };
 
 function onScroll(){
@@ -803,7 +808,7 @@ function onScroll(){
   st.mode = y < tdTop - vh*.5 ? 'hero' : y < fTop - vh*.6 ? 'teardown' : y < fTop + fleetEl.offsetHeight - vh*.3 ? 'fleet' : 'solid';
   nav.classList.toggle('scrolled', y > 40);
   // teardown UI
-  const stepIdx = Math.min(5, Math.floor(st.tdP * 6.0001));
+  const stepIdx = st.tdP < .26 ? (st.tdP < .13 ? 0 : 1) : Math.min(6, 2 + Math.floor((st.tdP - .26)/.74*5.0001));
   steps.forEach((s,i) => s.classList.toggle('on', i === stepIdx));
   $('tdstep').textContent = String(stepIdx+1).padStart(2,'0');
   $('tdpct').innerHTML = 'Exploded <b>' + Math.round(st.tdP*100) + '%</b>';
@@ -811,7 +816,7 @@ function onScroll(){
 }
 addEventListener('scroll', onScroll, { passive:true });
 
-steps.forEach(s => s.addEventListener('click', () => { const i = steps.indexOf(s); const vh = innerHeight; scrollTo({ top: tdEl.offsetTop + (tdEl.offsetHeight - vh) * ((i + .5) / 6), behavior:'smooth' }); }));
+steps.forEach(s => s.addEventListener('click', () => { const i = steps.indexOf(s); const vh = innerHeight; const f = i === 0 ? .07 : i === 1 ? .2 : .26 + .74*((i - 2 + .5)/5); scrollTo({ top: tdEl.offsetTop + (tdEl.offsetHeight - vh) * f, behavior:'smooth' }); }));
 chips.forEach(c => { c.addEventListener('mouseenter', () => setHover(c.dataset.part, true)); c.addEventListener('mouseleave', () => { if (!st.pinned) setHover(null); }); c.addEventListener('click', () => pin(c.dataset.part)); });
 
 // fleet tabs
@@ -886,19 +891,22 @@ function frame(){
   const fit = Math.min(1, hw/1.75);                                                // shrink on narrow or square viewports
 
   // stage targets
-  if (mode === 'hero'){ tgt.pos.set(m ? 0 : hw*.38, m ? .38 : -.04, 0); tgt.scale = (m ? 1.1 : 1.42)*fit; tgt.rot = -.6 + (reduced ? 0 : Math.sin(t*.18)*.25); }
-  else if (mode === 'teardown'){ tgt.pos.set(m ? 0 : hw*.36, m ? .32 : .02, 0); tgt.scale = (m ? .9 : 1.18)*fit; tgt.rot = -.4 + st.tdP*1.6; }
-  else { tgt.pos.set(m ? 0 : hw*.42, m ? .35 : .02, 0); tgt.scale = (m ? .95 : 1.3)*fit; tgt.rot = -.4 + 1.6; }
+  if (mode === 'hero'){ tgt.pos.set(m ? 0 : hw*.38, m ? .38 : -.04, 0); tgt.scale = (m ? 1.1 : 1.42)*fit; tgt.rot = Math.PI - .55 + (reduced ? 0 : Math.sin(t*.18)*.25); }
+  else if (mode === 'teardown'){ tgt.pos.set(m ? 0 : hw*.36, m ? .32 : .02, 0); tgt.scale = (m ? .9 : 1.18)*fit; tgt.rot = Math.PI - .4 + st.tdP*1.6; }
+  else { tgt.pos.set(m ? 0 : hw*.42, m ? .35 : .02, 0); tgt.scale = (m ? .95 : 1.3)*fit; tgt.rot = Math.PI - .4 + 1.6; }
   const kp = 1 - Math.exp(-dt*4.5);
   cur.pos.lerp(tgt.pos, kp); cur.scale += (tgt.scale - cur.scale)*kp; cur.rot += (tgt.rot - cur.rot)*kp;
   if (!st.dragging){ st.drag += st.dragV; st.dragV *= .92; }
   st.mx += (st.tmx - st.mx)*(1-Math.exp(-dt*3)); st.my += (st.tmy - st.my)*(1-Math.exp(-dt*3));
 
   // explode amount follows the teardown progress, settles back when leaving
-  const ex = mode === 'teardown' ? st.tdP : mode === 'fleet' ? 0 : 0;
+  const ex = mode === 'teardown' ? Math.max(0, (st.tdP - .26)/.74) : 0;
   st.explode += (ex - st.explode)*(1-Math.exp(-dt*6));
-  st.fold += (st.foldT - st.fold)*(1-Math.exp(-dt*2.2));
-  foldBtn.classList.toggle('show', mode === 'hero' || mode === 'teardown' || (mode === 'fleet' && fleetState.key === 'ax4'));
+  // in the teardown the arms fold and deploy on their own during the first stage; elsewhere the button drives it
+  const foldAuto = st.tdP < .13 ? ss(st.tdP/.13) : st.tdP < .26 ? 1 - ss((st.tdP - .13)/.13) : 0;
+  const foldTarget = mode === 'teardown' ? foldAuto : st.foldT;
+  st.fold += (foldTarget - st.fold)*(1-Math.exp(-dt*(mode === 'teardown' ? 8 : 2.2)));
+  foldBtn.classList.toggle('show', mode === 'hero' || (mode === 'fleet' && fleetState.key === 'ax4'));
 
   // fleet cross-fade: AX4 out, selected model in
   const fleetOn = mode === 'fleet' && fleetState.key !== 'ax4';
@@ -924,8 +932,8 @@ function frame(){
   parts.forEach(p => {
     const [s,e] = p.win; const k = ss((st.explode - s)/(e - s)); p.k = k;
     tmpV.copy(p.dir).multiplyScalar(p.dist*k); p.mesh.position.copy(p.base).add(tmpV);
-    if (p.mesh.userData.arm != null){ hingeDelta(p.mesh.userData.arm, st.fold, foldD); tmpT.makeTranslation(p.mesh.position.x, p.mesh.position.y, p.mesh.position.z); tmpR.makeRotationY(p.mesh.rotation.y);
-      p.mesh.matrix.copy(foldD).multiply(tmpT).multiply(tmpR); p.mesh.matrixWorldNeedsUpdate = true; }
+    if (p.mesh.userData.arm != null){ hingeDelta(p.mesh.userData.arm, st.fold, foldD); tmpT.makeTranslation(p.mesh.position.x, p.mesh.position.y, p.mesh.position.z); tmpR.makeRotationY(p.mesh.userData.spin); tmpQ.makeRotationFromQuaternion(p.mesh.userData.baseQ);
+      p.mesh.matrix.copy(foldD).multiply(tmpT).multiply(tmpR).multiply(tmpQ); p.mesh.matrixWorldNeedsUpdate = true; }
     const lit = hk && p.info === hk; const dim = hk && !lit;
     p.lit += ((lit ? 1 : 0) - p.lit)*(1-Math.exp(-dt*10));
     p.dimv = (p.dimv||0) + ((dim ? 1 : 0) - (p.dimv||0))*(1-Math.exp(-dt*8));
@@ -936,7 +944,7 @@ function frame(){
   // props and HUD
   const rpm = mode === 'hero' ? 3200 : mode === 'teardown' ? 3200*(1 - st.explode*.9) : 2600;
   const spin = reduced ? 2 : rpm/60*2*Math.PI*.012;      // visual rate, not real
-  for (const s of spinners) s.spin.rotation.y += dt*spin*s.dir*(s.rate||1);
+  for (const s of spinners){ if (s.ud) s.spin.userData.spin += dt*spin*s.dir*(s.rate||1); else s.spin.rotation.y += dt*spin*s.dir*(s.rate||1); }
   if (mode === 'hero' && Math.floor(t*4) % 1 === 0) $('hud-rpm').textContent = String(Math.round(rpm + Math.sin(t*3)*40)).padStart(4,'0');
 
   // leader line from the hovered part to the card
